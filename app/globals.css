@@ -101,12 +101,6 @@ body {
   /* font-family: Arial, Helvetica, sans-serif; */
 }
 
-.container-padding {
-  margin-left: auto;
-  margin-right: auto;
-  max-width: 90rem;
-}
-
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -147,6 +141,22 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+.container-padding {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media screen and (min-width: 1280px) {
+  .container-padding {
+    max-width: 90rem;
+    padding-left: 0;
+    padding-right: 0;
   }
 }
 

@@ -76,7 +76,7 @@ export default function DrupalProfileForm() {
         Roast My <span className="text-dodger-blue">Drupal</span>
       </h1>
 
-      <div className="max-w-[520px] w-full mt-8 mb-6 flex items-center gap-4">
+      <div className="max-w-[520px] w-full mt-8 mb-6 flex flex-col md:flex-row items-center gap-4">
         <input
           type="text"
           value={profile.value}
@@ -94,7 +94,7 @@ export default function DrupalProfileForm() {
           aria-describedby={error ? "profile-error" : undefined}
           disabled={isSubmitting}
         />
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting} className="w-full md:w-fit">
           {isSubmitting ? "Roasting..." : "Roast away"}
         </Button>
       </div>
