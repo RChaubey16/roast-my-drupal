@@ -1,7 +1,10 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner"
+
 import { removeExtraSpaces, validateDrupalUrl } from "@/utils/helpers";
 
 interface ProfileState {
@@ -28,6 +31,7 @@ export default function DrupalProfileForm() {
     const trimmedValue = removeExtraSpaces(profile.value);
     if (!trimmedValue) {
       setError(ERROR_MESSAGE);
+      toast(ERROR_MESSAGE)
       setIsSubmitting(false);
       return;
     }
@@ -38,10 +42,12 @@ export default function DrupalProfileForm() {
         !trimmedValue.startsWith(DRUPAL_URL)
       ) {
         setError("Please enter a valid Drupal.org URL");
+        toast("Please enter a valid Drupal.org URL")
         setIsSubmitting(false);
       } else if (trimmedValue.startsWith(DRUPAL_URL)) {
         if (!validateDrupalUrl(trimmedValue)) {
           setError("Please enter a valid Drupal.org URL");
+          toast("Please enter a valid Drupal.org URL")
           setIsSubmitting(false);
           return;
         }
@@ -62,6 +68,7 @@ export default function DrupalProfileForm() {
       console.log("Submitted profile:", profile);
     } catch (error) {
       setError("An error occurred while processing your request");
+      toast("An error occurred while processing your request")
     } finally {
       setIsSubmitting(false);
     }
