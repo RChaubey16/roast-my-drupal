@@ -27,6 +27,7 @@ export default function DrupalProfileForm() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     // Form validations
     const trimmedValue = removeExtraSpaces(profile.value);
@@ -34,8 +35,6 @@ export default function DrupalProfileForm() {
       toast(ERROR_MESSAGE, { action: { label: "Close", onClick: () => {} } });
       return; // Don't set isSubmitting to true yet
     }
-
-    setIsSubmitting(true); // Move this here
 
     try {
       if (
@@ -62,6 +61,7 @@ export default function DrupalProfileForm() {
         setProfile({ type: "username", value: trimmedValue });
       }
 
+      // Handling a successful submission
       let profileName =
         profile.type === "username"
           ? profile.value
