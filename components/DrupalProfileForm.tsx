@@ -1,9 +1,10 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import PuffLoader from "react-spinners/PuffLoader";
 
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner"
+import { toast } from "sonner";
 
 import { removeExtraSpaces, validateDrupalUrl } from "@/utils/helpers";
 
@@ -20,18 +21,20 @@ export default function DrupalProfileForm() {
     type: "",
     value: "",
   });
-  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     setIsSubmitting(true);
 
     const trimmedValue = removeExtraSpaces(profile.value);
     if (!trimmedValue) {
-      setError(ERROR_MESSAGE);
-      toast(ERROR_MESSAGE)
+      toast(ERROR_MESSAGE, {
+        action: {
+          label: "Close",
+          onClick: () => {},
+        },
+      });
       setIsSubmitting(false);
       return;
     }
@@ -41,13 +44,21 @@ export default function DrupalProfileForm() {
         trimmedValue.includes("https") &&
         !trimmedValue.startsWith(DRUPAL_URL)
       ) {
-        setError("Please enter a valid Drupal.org URL");
-        toast("Please enter a valid Drupal.org URL")
+        toast("Please enter a valid Drupal.org URL", {
+          action: {
+            label: "Close",
+            onClick: () => {},
+          },
+        });
         setIsSubmitting(false);
       } else if (trimmedValue.startsWith(DRUPAL_URL)) {
         if (!validateDrupalUrl(trimmedValue)) {
-          setError("Please enter a valid Drupal.org URL");
-          toast("Please enter a valid Drupal.org URL")
+          toast("Please enter a valid Drupal.org URL", {
+            action: {
+              label: "Close",
+              onClick: () => {},
+            },
+          });
           setIsSubmitting(false);
           return;
         }
@@ -67,8 +78,12 @@ export default function DrupalProfileForm() {
       // TODO: Handle form submission
       console.log("Submitted profile:", profile);
     } catch (error) {
-      setError("An error occurred while processing your request");
-      toast("An error occurred while processing your request")
+      toast("An error occurred while processing your request", {
+        action: {
+          label: "Close",
+          onClick: () => {},
+        },
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -90,31 +105,33 @@ export default function DrupalProfileForm() {
           onChange={(e) =>
             setProfile((prevProfile) => ({
               ...prevProfile,
-              type: "",
+              type: e.target.value.includes("https") ? "url" : "username",
               value: e.target.value,
             }))
           }
           placeholder="Enter your Drupal profile, and let the roast begin!"
           className="w-full py-2.5 px-3 rounded-md focus:outline-none bg-tundora text-sm font-normal text-silver"
           aria-label="Drupal profile URL or username"
-          aria-invalid={!!error}
-          aria-describedby={error ? "profile-error" : undefined}
           disabled={isSubmitting}
         />
-        <Button type="submit" disabled={isSubmitting} className="w-full md:w-fit">
-          {isSubmitting ? "Roasting..." : "Roast away"}
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full md:w-26"
+        >
+          {isSubmitting ? (
+            <PuffLoader
+              color={"#FFFFFF"}
+              loading={isSubmitting}
+              size={30}
+              aria-label="Loading Spinner"
+              data-testid="loader"
+            />
+          ) : (
+            "Roast away"
+          )}
         </Button>
       </div>
-
-      {error && (
-        <p
-          id="profile-error"
-          className="text-red-500 text-sm mb-4"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
 
       <div>
         <p className="text-base font-medium text-silver text-center">
