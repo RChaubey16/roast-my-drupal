@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import PuffLoader from "react-spinners/PuffLoader";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { toast } from "sonner";
 
 import { removeExtraSpaces, validateDrupalUrl } from "@/utils/helpers";
 
-interface ProfileState {
+export interface ProfileState {
   type: "url" | "username" | "";
   value: string;
 }
@@ -22,22 +23,19 @@ export default function DrupalProfileForm() {
     value: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
+    // Form validations
     const trimmedValue = removeExtraSpaces(profile.value);
     if (!trimmedValue) {
-      toast(ERROR_MESSAGE, {
-        action: {
-          label: "Close",
-          onClick: () => {},
-        },
-      });
-      setIsSubmitting(false);
-      return;
+      toast(ERROR_MESSAGE, { action: { label: "Close", onClick: () => {} } });
+      return; // Don't set isSubmitting to true yet
     }
+
+    setIsSubmitting(true); // Move this here
 
     try {
       if (
@@ -45,47 +43,35 @@ export default function DrupalProfileForm() {
         !trimmedValue.startsWith(DRUPAL_URL)
       ) {
         toast("Please enter a valid Drupal.org URL", {
-          action: {
-            label: "Close",
-            onClick: () => {},
-          },
+          action: { label: "Close", onClick: () => {} },
         });
         setIsSubmitting(false);
-      } else if (trimmedValue.startsWith(DRUPAL_URL)) {
+        return;
+      }
+
+      if (trimmedValue.startsWith(DRUPAL_URL)) {
         if (!validateDrupalUrl(trimmedValue)) {
           toast("Please enter a valid Drupal.org URL", {
-            action: {
-              label: "Close",
-              onClick: () => {},
-            },
+            action: { label: "Close", onClick: () => {} },
           });
           setIsSubmitting(false);
           return;
         }
-        setProfile((prevProfile) => ({
-          ...prevProfile,
-          type: "url",
-          value: trimmedValue,
-        }));
+        setProfile({ type: "url", value: trimmedValue });
       } else {
-        setProfile((prevProfile) => ({
-          ...prevProfile,
-          type: "username",
-          value: trimmedValue,
-        }));
+        setProfile({ type: "username", value: trimmedValue });
       }
 
-      // TODO: Handle form submission
-      console.log("Submitted profile:", profile);
+      let profileName =
+        profile.type === "username"
+          ? profile.value
+          : profile.value.split("/").pop() ?? "";
+
+      router.push(`/roast/${profileName}`);
     } catch (error) {
       toast("An error occurred while processing your request", {
-        action: {
-          label: "Close",
-          onClick: () => {},
-        },
+        action: { label: "Close", onClick: () => {} },
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
