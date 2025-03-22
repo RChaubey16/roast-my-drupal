@@ -16,4 +16,8 @@ export const roastModes: RoastMode[] = [
     id: 3,
     mode: "Phoebe Buffay",
   },
+  {
+    id: 4,
+    mode: "Kevin Hart",
+  },
 ];
