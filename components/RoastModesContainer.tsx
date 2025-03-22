@@ -1,22 +1,16 @@
-"use client";
-
-import { useState } from "react";
 import { roastModes } from "@/data/roastModes";
 import RoastMode from "./RoastMode";
+import { ActiveMode } from "./ProfileForm";
 
-export interface ActiveMode {
-  id: number;
-  mode: string;
+interface RoastModesContainerProps {
+  activeMode: ActiveMode;
+  setActiveMode: (args: { id: number; mode: string }) => void;
 }
 
-const INITIAL_MODE: ActiveMode = {
-  id: -1,
-  mode: "",
-};
-
-export default function RoastModesContainer() {
-  const [activeMode, setActiveMode] = useState<ActiveMode>(INITIAL_MODE);
-
+export default function RoastModesContainer({
+  activeMode,
+  setActiveMode,
+}: RoastModesContainerProps) {
   return (
     <div className="w-42 md:w-fit mt-10">
       <hr className="mb-10 border-t-1 border-tundora rounded-2xl" />

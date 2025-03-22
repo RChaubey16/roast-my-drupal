@@ -8,15 +8,29 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DRUPAL_URL, removeExtraSpaces } from "@/utils/helpers";
 import { extractProfileName, validateForm } from "@/lib/profileFormActions";
+import RoastModesContainer from "./RoastModesContainer";
 
 // Lazy load the Server Component
-const ProfileFormDescription = dynamic(() => import("./ProfileFormDescription"), {
-  ssr: true, // Ensures it renders server-side
-});
+const ProfileFormDescription = dynamic(
+  () => import("./ProfileFormDescription"),
+  {
+    ssr: true, // Ensures it renders server-side
+  }
+);
 export interface ProfileState {
   type: "url" | "username" | "";
   value: string;
 }
+
+export interface ActiveMode {
+  id: number;
+  mode: string;
+}
+
+const INITIAL_MODE: ActiveMode = {
+  id: -1,
+  mode: "",
+};
 
 // Helper functions
 const showErrorToast = (message: string) => {
@@ -26,6 +40,7 @@ const showErrorToast = (message: string) => {
 export default function ProfileForm() {
   const [profile, setProfile] = useState<ProfileState>({ type: "", value: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeMode, setActiveMode] = useState<ActiveMode>(INITIAL_MODE);
   const router = useRouter();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -48,7 +63,12 @@ export default function ProfileForm() {
       });
 
       const profileName = await extractProfileName(profile);
-      router.push(`/roast/${profileName}`);
+      // TODO: Handler the roast mode on roast page.
+      router.push(
+        `/roast/${profileName}${
+          activeMode.id > 0 ? `?mode=${activeMode.mode}` : ""
+        }`
+      );
     } catch (error) {
       showErrorToast("An error occurred while processing your request");
       setIsSubmitting(false);
@@ -63,7 +83,6 @@ export default function ProfileForm() {
       <h1 className="font-roboto text-34 font-normal text-silver text-center">
         Roast My <span className="text-dodger-blue">Drupal</span>
       </h1>
-      
       <div className="max-w-[520px] w-full mt-8 mb-6 flex flex-col md:flex-row items-center gap-4">
         <input
           type="text"
@@ -99,6 +118,10 @@ export default function ProfileForm() {
         </Button>
       </div>
       <ProfileFormDescription />
+      <RoastModesContainer
+        activeMode={activeMode}
+        setActiveMode={setActiveMode}
+      />
     </form>
   );
 }
