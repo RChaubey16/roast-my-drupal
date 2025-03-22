@@ -6,7 +6,7 @@ A fun web application that generates hilarious roasts for Drupal.org user profil
 
 - [Next.js](https://nextjs.org/) - React framework for web applications
 - [Google Gemini API](https://ai.google.dev/) - AI model for generating roasts
-- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
+- [Tailwind CSS V4](https://tailwindcss.com/) - Utility-first CSS framework
 
 ## Getting Started
 
@@ -33,7 +33,7 @@ npm install
 3. Create a `.env` file in the root directory and add your Google Gemini API key:
 
 ```env
-GOOGLE_API_KEY=your_api_key_here
+GOOGLE_GENERATIVE_AI_API_KEY=your_api_key_here
 ```
 
 4. Run the development server
