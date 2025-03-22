@@ -4,9 +4,9 @@ export default async function Markdown({ text }: { text: string }) {
   return (
     <ReactMarkdown
       components={{
-        p: ({ children }) => <p className="mb-4">{children}</p>,
+        p: ({ children }) => <p className="mb-4 text-base">{children}</p>,
         strong: ({ children }) => (
-          <strong className="font-bold text-dodger-blue">{children}</strong>
+          <strong className="font-bold text-dodger-blue/80">{children}</strong>
         ),
         em: ({ children }) => <em className="italic ">{children}</em>,
         h1: ({ children }) => (
