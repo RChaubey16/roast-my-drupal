@@ -46,6 +46,8 @@
   --dodger-blue: #39B0F9;
   --silver: #CCCCCC;
   --tundora: #4C4C4C;
+  --roast-mode-active-background: #033E63;
+  --roast-mode-active-border: #39B0F9;
 }
 
 @theme inline {
@@ -94,6 +96,8 @@
   --color-dodger-blue: var(--dodger-blue);
   --color-silver: var(--silver);
   --color-tundora: var(--tundora);
+  --color-roast-mode-active-background: var(--roast-mode-active-background);
+  --color-roast-mode-active-border: var(--roast-mode-active-border);
 }
 
 body {
