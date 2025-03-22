@@ -63,7 +63,7 @@ export default function ProfileForm() {
       <h1 className="font-roboto text-34 font-normal text-silver text-center">
         Roast My <span className="text-dodger-blue">Drupal</span>
       </h1>
-
+      
       <div className="max-w-[520px] w-full mt-8 mb-6 flex flex-col md:flex-row items-center gap-4">
         <input
           type="text"
@@ -83,7 +83,7 @@ export default function ProfileForm() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full md:w-26"
+          className="w-full md:w-26 motion-preset-seesaw"
         >
           {isSubmitting ? (
             <ClipLoader
