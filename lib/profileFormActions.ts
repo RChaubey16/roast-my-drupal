@@ -1,24 +1,11 @@
 "use server";
 
-import { generateText } from "ai";
-import { google } from "@ai-sdk/google";
-
-import { ProfileState } from "@/components/DrupalProfileForm";
-import { DRUPAL_URL, removeExtraSpaces, validateDrupalUrl } from "@/utils/helpers";
-
-/**
- * Generates a roast/feedback for a Drupal site using Google's Gemini model
- * @param question The user's input or site details to analyze
- * @returns Generated text response with finish reason and usage metrics
- */
-export async function fetchUserRoast(question: string) {
-  const { text, finishReason, usage } = await generateText({
-    model: google("gemini-2.0-flash"),
-    prompt: question,
-  });
-
-  return { text, finishReason, usage };
-}
+import { ProfileState } from "@/components/ProfileForm";
+import {
+  DRUPAL_URL,
+  removeExtraSpaces,
+  validateDrupalUrl,
+} from "@/utils/helpers";
 
 /**
  * Extracts username from either a full Drupal.org URL or username input
@@ -39,7 +26,7 @@ export async function extractProfileName(profile: ProfileState) {
 export async function validateForm(value: string) {
   const ERROR_MESSAGE = "Please enter a valid Drupal profile URL or username";
   const trimmedValue = removeExtraSpaces(value);
-  
+
   if (!trimmedValue) {
     return { isValid: false, message: ERROR_MESSAGE };
   }
@@ -53,4 +40,4 @@ export async function validateForm(value: string) {
   }
 
   return { isValid: true };
-};
+}

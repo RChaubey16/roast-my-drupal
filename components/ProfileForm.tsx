@@ -7,7 +7,7 @@ import { ClipLoader } from "react-spinners";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DRUPAL_URL, removeExtraSpaces } from "@/utils/helpers";
-import { extractProfileName, validateForm } from "@/app/actions";
+import { extractProfileName, validateForm } from "@/lib/profileFormActions";
 
 // Lazy load the Server Component
 const ProfileFormDescription = dynamic(() => import("./ProfileFormDescription"), {
@@ -23,7 +23,7 @@ const showErrorToast = (message: string) => {
   toast(message, { action: { label: "Close", onClick: () => {} } });
 };
 
-export default function DrupalProfileForm() {
+export default function ProfileForm() {
   const [profile, setProfile] = useState<ProfileState>({ type: "", value: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();

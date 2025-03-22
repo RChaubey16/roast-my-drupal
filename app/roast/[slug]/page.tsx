@@ -1,12 +1,10 @@
-import { fetchUserRoast } from "@/app/actions";
+import ReactMarkdown from "react-markdown";
+import { fetchScrappedDrupalProfile, fetchUserRoast } from "@/lib/roastActions";
 import {
   DRUPAL_URL,
   extractBetween,
-  fetchScrappedDrupalProfile,
   getRoastPrompt,
 } from "@/utils/helpers";
-import React from "react";
-import ReactMarkdown from "react-markdown";
 
 export default async function RoastPage({
   params,
@@ -14,8 +12,6 @@ export default async function RoastPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  // const roastPrompt = getRoastPrompt(`${DRUPAL_URL}/u/${slug}`);
-
   const scrapedProfile = `${DRUPAL_URL}/u/${slug}`;
   const scrappedProfileData = await fetchScrappedDrupalProfile(scrapedProfile);
   const result = scrappedProfileData.data

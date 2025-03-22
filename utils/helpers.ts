@@ -77,31 +77,6 @@ export const validateDrupalUrl = (url: string): boolean => {
 };
 
 /**
- * Fetches scraped profile data from a proxy service
- * @param profileLink The profile link to fetch data for
- * @returns Object containing success status and either data or error message
- */
-export const fetchScrappedDrupalProfile = async (profileLink: string) => {
-  try {
-    const drupalProfileUrl = `https://r.jina.ai/${profileLink}`;
-    const response = await fetch(drupalProfileUrl);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    const data = await response.text();
-    return { success: true, data }; // Return the data normally
-  } catch (error) {
-    if (error instanceof Error) {
-      return { success: false, error: error.message };
-    } else {
-      return { success: false, error: "An unknown error occurred" };
-    }
-  }
-};
-
-/**
  * Extracts text between two phrases in a string
  * @param text The source text to search in
  * @param startPhrase The starting phrase to search from
