@@ -1,7 +1,12 @@
 export const DRUPAL_URL = "https://www.drupal.org";
 
-export const getRoastPrompt = (profileLink: string) => {
-  return `Create a hilarious roast of the Drupal profile at ${profileLink}. Be brutally funny but good-natured, using sarcasm, pop culture references, and movie analogies that would make even the most seasoned developer laugh.
+/**
+ * Generates a structured roast prompt for a Drupal.org profile
+ * @param profileData The scraped profile data from Drupal.org
+ * @returns A formatted prompt string for generating roasts
+ */
+export const getRoastPrompt = (profileData: string) => {
+  return `Create a hilarious roast of the Drupal profile data that I will provide you below. Be brutally funny but good-natured, using sarcasm, pop culture references, and movie analogies that would make even the most seasoned developer laugh.
 
 Profile Analysis:
 1. FIRST IMPRESSION (Opening Punchline)
@@ -30,7 +35,7 @@ Profile Analysis:
 5. FINAL VERDICT
    - Summarize their profile with references to their most distinctive characteristics
    - Create a custom mock "Drupal Developer Rating" based on their specific profile elements
-   - End with a hilariously fitting movie quote that's been twisted to reflect their specific Drupal journey
+   - End with a unique, hilariously fitting movie quote that's been twisted to reflect their specific Drupal journey
 
 IMPORTANT: 
 - DO NOT mention any specific years, dates, or time periods
@@ -44,12 +49,24 @@ Remember:
 - Keep it lighthearted but ruthless—like a roast between good friends
 - Use tech humor that Drupal developers would appreciate
 - Never mention or include the profile URL in the roast
-- Maintain a conversational, stand-up comedy style throughout the roast`;
+- Maintain a conversational, stand-up comedy style throughout the roast
+
+Here is Drupal profile information for your roast: ${profileData}`;
 };
 
+/**
+ * Removes multiple spaces and trims whitespace from a string
+ * @param str The input string to clean
+ * @returns A string with normalized spacing
+ */
 export const removeExtraSpaces = (str: string) =>
   str.trim().replace(/\s+/g, " ");
 
+/**
+ * Validates if a given URL belongs to Drupal.org
+ * @param url The URL to validate
+ * @returns Boolean indicating if URL is a valid Drupal.org URL
+ */
 export const validateDrupalUrl = (url: string): boolean => {
   try {
     const parsedUrl = new URL(url);
@@ -58,3 +75,46 @@ export const validateDrupalUrl = (url: string): boolean => {
     return false;
   }
 };
+
+/**
+ * Fetches scraped profile data from a proxy service
+ * @param profileLink The profile link to fetch data for
+ * @returns Object containing success status and either data or error message
+ */
+export const fetchScrappedDrupalProfile = async (profileLink: string) => {
+  try {
+    const drupalProfileUrl = `https://r.jina.ai/${profileLink}`;
+    const response = await fetch(drupalProfileUrl);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.text();
+    return { success: true, data }; // Return the data normally
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, error: error.message };
+    } else {
+      return { success: false, error: "An unknown error occurred" };
+    }
+  }
+};
+
+/**
+ * Extracts text between two phrases in a string
+ * @param text The source text to search in
+ * @param startPhrase The starting phrase to search from
+ * @param endPhrase The ending phrase to search until
+ * @returns The extracted text between phrases or null if not found
+ */
+export function extractBetween(text: string, startPhrase: string, endPhrase: string) {
+  const startIndex = text.indexOf(startPhrase);
+  const endIndex = text.indexOf(endPhrase, startIndex);
+
+  if (startIndex === -1 || endIndex === -1) {
+    return null; // Return null if either phrase is not found
+  }
+
+  return text.substring(startIndex + startPhrase.length, endIndex).trim() ?? "";
+}

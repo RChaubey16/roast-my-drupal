@@ -1,77 +1,57 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import PuffLoader from "react-spinners/PuffLoader";
-
-import { Button } from "@/components/ui/button";
+import { ClipLoader } from "react-spinners";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { DRUPAL_URL, removeExtraSpaces } from "@/utils/helpers";
+import { extractProfileName, validateForm } from "@/app/actions";
 
-import { removeExtraSpaces, validateDrupalUrl } from "@/utils/helpers";
-
+// Lazy load the Server Component
+const ProfileFormDescription = dynamic(() => import("./ProfileFormDescription"), {
+  ssr: true, // Ensures it renders server-side
+});
 export interface ProfileState {
   type: "url" | "username" | "";
   value: string;
 }
 
-const DRUPAL_URL = "https://www.drupal.org";
-const ERROR_MESSAGE = "Please enter a valid Drupal profile URL or username";
+// Helper functions
+const showErrorToast = (message: string) => {
+  toast(message, { action: { label: "Close", onClick: () => {} } });
+};
 
 export default function DrupalProfileForm() {
-  const [profile, setProfile] = useState<ProfileState>({
-    type: "",
-    value: "",
-  });
+  const [profile, setProfile] = useState<ProfileState>({ type: "", value: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Form validations
-    const trimmedValue = removeExtraSpaces(profile.value);
-    if (!trimmedValue) {
-      toast(ERROR_MESSAGE, { action: { label: "Close", onClick: () => {} } });
-      return; // Don't set isSubmitting to true yet
-    }
-
     try {
-      if (
-        trimmedValue.includes("https") &&
-        !trimmedValue.startsWith(DRUPAL_URL)
-      ) {
-        toast("Please enter a valid Drupal.org URL", {
-          action: { label: "Close", onClick: () => {} },
-        });
+      const trimmedValue = removeExtraSpaces(profile.value);
+      const validation = await validateForm(trimmedValue);
+
+      if (!validation.isValid) {
+        showErrorToast(validation.message!);
         setIsSubmitting(false);
         return;
       }
 
-      if (trimmedValue.startsWith(DRUPAL_URL)) {
-        if (!validateDrupalUrl(trimmedValue)) {
-          toast("Please enter a valid Drupal.org URL", {
-            action: { label: "Close", onClick: () => {} },
-          });
-          setIsSubmitting(false);
-          return;
-        }
-        setProfile({ type: "url", value: trimmedValue });
-      } else {
-        setProfile({ type: "username", value: trimmedValue });
-      }
+      setProfile({
+        type: trimmedValue.startsWith(DRUPAL_URL) ? "url" : "username",
+        value: trimmedValue,
+      });
 
-      // Handling a successful submission
-      let profileName =
-        profile.type === "username"
-          ? profile.value
-          : profile.value.split("/").pop() ?? "";
-
+      const profileName = await extractProfileName(profile);
       router.push(`/roast/${profileName}`);
     } catch (error) {
-      toast("An error occurred while processing your request", {
-        action: { label: "Close", onClick: () => {} },
-      });
+      showErrorToast("An error occurred while processing your request");
+      setIsSubmitting(false);
     }
   };
 
@@ -106,10 +86,10 @@ export default function DrupalProfileForm() {
           className="w-full md:w-26"
         >
           {isSubmitting ? (
-            <PuffLoader
+            <ClipLoader
               color={"#FFFFFF"}
               loading={isSubmitting}
-              size={30}
+              size={22}
               aria-label="Loading Spinner"
               data-testid="loader"
             />
@@ -118,23 +98,7 @@ export default function DrupalProfileForm() {
           )}
         </Button>
       </div>
-
-      <div>
-        <p className="text-base font-medium text-silver text-center">
-          Drop your Drupal profile URL or username here and let the roasting
-          begin!
-        </p>
-        <p className="mt-2 text-sm font-extralight text-silver text-center">
-          Example:{" "}
-          <span className="font-normal italic text-dodger-blue">
-            {`${DRUPAL_URL}/u/drupaldev123`}
-          </span>{" "}
-          or just{" "}
-          <span className="font-normal italic text-dodger-blue">
-            drupaldev123
-          </span>
-        </p>
-      </div>
+      <ProfileFormDescription />
     </form>
   );
 }
