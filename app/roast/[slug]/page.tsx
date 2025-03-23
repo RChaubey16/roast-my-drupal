@@ -1,13 +1,16 @@
+import Link from "next/link";
 import { fetchScrappedDrupalProfile, fetchUserRoast } from "@/lib/roastActions";
 import { DRUPAL_URL, extractBetween, getRoastPrompt } from "@/utils/helpers";
+import { roastModes } from "@/data/roastModes";
 import Markdown from "@/components/Markdown";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 
 export default async function RoastPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: { [key: string]: string | string[] | undefined };
 }) {
   const { slug } = await params;
   const scrapedProfile = `${DRUPAL_URL}/u/${slug}`;
@@ -15,7 +18,18 @@ export default async function RoastPage({
   const result = scrappedProfileData.data
     ? extractBetween(scrappedProfileData.data, `${slug}#top`, "News items")
     : "";
-  const roastPrompt = getRoastPrompt(result ?? "");
+
+  const roastParams = await searchParams;
+  const roastMode = roastParams.mode ?? "";
+
+  const selectedRoastMode = roastModes.find(
+    (roast) => roast.id === Number(roastMode)
+  );
+
+  const roastPrompt = getRoastPrompt(
+    result ?? "",
+    selectedRoastMode?.mode ?? ""
+  );
   const { text } = await fetchUserRoast(roastPrompt);
 
   return (

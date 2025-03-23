@@ -59,6 +59,11 @@ export const getRoastPrompt = (profileData: string, characterMode?: string) => {
     CHARACTER MODE: ${characterMode}
     In this roast, write in the distinctive voice and style of ${characterMode}. Incorporate their signature phrases, speech patterns, mannerisms, and humor style. Make the roast sound exactly like ${characterMode} is delivering it, while maintaining all the Drupal-specific content and profile analysis from above.
 
+    SPECIAL INSTRUCTIONS:
+    - Conclude the roast with one of ${characterMode}'s most iconic catchphrases or dialogues, cleverly modified to fit the Drupal context
+    - The closing line should blend the character's famous words with a specific detail from the roasted profile
+    - Keep the character's personality consistent throughout, especially in the conclusion
+
     Here is Drupal profile information for your roast: ${profileData}`;
   }
 
