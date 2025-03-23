@@ -10,7 +10,7 @@ export default async function RoastPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { slug } = await params;
   const scrapedProfile = `${DRUPAL_URL}/u/${slug}`;
