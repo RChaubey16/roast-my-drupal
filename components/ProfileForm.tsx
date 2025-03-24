@@ -63,10 +63,9 @@ export default function ProfileForm() {
       });
 
       const profileName = await extractProfileName(profile);
-      // TODO: Handler the roast mode on roast page.
       router.push(
         `/roast/${profileName}${
-          activeMode.id > 0 ? `?mode=${activeMode.mode}` : ""
+          activeMode.id > 0 ? `?mode=${activeMode.id}` : ""
         }`
       );
     } catch (error) {
