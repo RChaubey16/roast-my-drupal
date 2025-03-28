@@ -10,11 +10,11 @@ export const roastModes: RoastMode[] = [
   },
   {
     id: 2,
-    mode: "Joey Tribbiani",
+    mode: "Elon Musk",
   },
   {
     id: 3,
-    mode: "Phoebe Buffay",
+    mode: "Grandma",
   },
   {
     id: 4,
