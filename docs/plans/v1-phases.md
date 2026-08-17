@@ -4,7 +4,7 @@ Companion to [`v1.md`](./v1.md). Each phase produces something runnable
 and testable before moving to the next — no phase depends on unbuilt
 future work.
 
-## Phase 0 — Project scaffolding
+## Phase 0 — Project scaffolding — DONE
 
 - Initialize Next.js app (TypeScript, App Router)
 - Install dependencies: Vercel AI SDK, an LLM provider SDK, `cheerio`,
@@ -14,13 +14,15 @@ future work.
 
 **Done when:** app boots locally, empty input UI renders.
 
-## Phase 1 — Drupal data layer (scrape + parse)
+## Phase 1 — Drupal data layer (scrape + parse) — DONE
 
 - `lib/drupal-client.ts` — resolve username → uid (via JSON:API or
-  api-d7), fetch the 3 target pages (profile, track, contribution
-  records)
+  api-d7), fetch profile + contribution-records (twice: unfiltered
+  and `field_is_sa_value=1`, for total vs. security-advisory counts —
+  3 fetches total). The activity/track page is dropped, see `v1.md`:
+  disallowed by `robots.txt`
 - `lib/parse-profile.ts` — parse raw HTML into the typed v1 field set
-  (Tier 1/2/3 fields from `v1.md`)
+  (Tier 1/3 fields from `v1.md`)
 - Save fixture HTML for 2 real usernames (one prolific, one
   near-empty) and write unit tests against those fixtures — no live
   network calls in tests
@@ -60,7 +62,7 @@ browser and watch a roast stream in, including the not-found path.
 - Per-IP rate limiter on `app/api/roast/route.ts`
 - "Slow down" UI state when rate-limited
 - Confirm no LLM call fires on: unresolved username, rate-limit hit
-- Pass through partial data gracefully if one of the 3 scrapes fails
+- Pass through partial data gracefully if one of the 3 fetches fails
   (roast with what succeeded rather than hard error)
 
 **Done when:** rapid repeated requests from one client get throttled
