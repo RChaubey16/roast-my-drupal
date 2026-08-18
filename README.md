@@ -16,6 +16,8 @@ ever used as roast material.
 A single Next.js app: one API route does the scrape → parse → prompt →
 stream pipeline server-side, deployed on Vercel.
 
+![Roast My Drupal app screenshot](public/images/app/front.png)
+
 ## How it works
 
 ```
