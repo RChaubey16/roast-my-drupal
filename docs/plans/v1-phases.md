@@ -32,7 +32,7 @@ future work.
 cleaned "roast input" object end-to-end, verified against both
 fixture profiles.
 
-## Phase 2 — Roast generation
+## Phase 2 — Roast generation — DONE
 
 - `lib/build-roast-prompt.ts` — turn the cleaned data object into the
   prompt payload

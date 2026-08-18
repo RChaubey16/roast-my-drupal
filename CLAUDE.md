@@ -64,20 +64,30 @@ Module layout:
   raw HTML fragments (or `null` per field on failure/access-restriction)
 - `lib/parse-profile.ts` — done. Cheerio parsing → typed fields, covers
   both the profile page (Tier 1) and contribution-records (Tier 3)
-- `lib/build-roast-prompt.ts` — not yet created. Typed data → prompt payload
-- `app/api/roast/route.ts` — not yet created. Orchestrates client → uid →
-  scrape → parse → prompt → stream, plus rate limiting
+- `lib/build-roast-prompt.ts` — done. `toRoastInput`/`buildRoastInputFromRawData`
+  narrow parsed data down to the Drupal-activity-only `RoastInput` type
+  (username, bio, badge, projects, contribution stats — no real name,
+  country, or org), then `buildRoastPrompt` turns that into `{ system, prompt }`
+- `lib/normalize-username.ts` — done. Accepts a bare username or a full
+  `/u/{username}` profile URL
+- `app/api/roast/route.ts` — done. `POST` handler: normalize → scrape →
+  build prompt → `streamText` → `toTextStreamResponse()`. No rate
+  limiting yet (Phase 4)
 
 Key constraints from the design doc:
 - No caching in v1 — every request re-scrapes and re-roasts (respecting
   `robots.txt`'s `Crawl-delay: 10`). A future cache layer is deliberately deferred.
 - Roast content must stay scoped to Drupal activity/contribution data (bio
-  phrasing, staleness, contribution claims vs. reality) — personal details
-  incidentally present in scraped data (real name, country, employer) must
-  not be used as roast material. This is enforced via the system prompt in
-  `lib/build-roast-prompt.ts`.
+  phrasing, staleness, contribution claims vs. reality). Personal details
+  incidentally present in scraped data (real name, country, employer) are
+  never used as roast material — enforced structurally: `RoastInput`
+  (`lib/build-roast-prompt.ts`) excludes those fields entirely, and the
+  system prompt states the Drupal-activity-only scope as defense in depth.
 - Degrade gracefully: if one of the 3 fetches fails, roast with whatever
   data succeeded rather than hard-failing. If the username doesn't resolve
   to a uid, return a friendly not-found message with no LLM call (saves cost).
 - LLM provider: Google Gemini via `@ai-sdk/google`, key in
   `GOOGLE_GENERATIVE_AI_API_KEY` (`.env.local`, gitignored; see `.env.example`).
+  Model: `gemini-3.6-flash` — confirmed live. `gemini-flash-latest` 503'd
+  ("high demand") and `gemini-2.5-flash` 404'd (deprecated; the API's own
+  error pointed at `gemini-3.6-flash` as the replacement).

@@ -2,6 +2,7 @@ const BASE_URL = "https://www.drupal.org";
 const USER_AGENT = "RoastMyDrupal/1.0 (+https://github.com/roast-my-drupal)";
 
 export interface DrupalProfileData {
+  username: string;
   uid: number | null;
   profileHtml: string | null;
   contributionRecordsHtml: string | null;
@@ -46,6 +47,7 @@ export async function fetchDrupalProfileData(
   const uid = await resolveUidFromUsername(username);
   if (uid === null) {
     return {
+      username,
       uid: null,
       profileHtml: null,
       contributionRecordsHtml: null,
@@ -62,5 +64,11 @@ export async function fetchDrupalProfileData(
       ),
     ]);
 
-  return { uid, profileHtml, contributionRecordsHtml, contributionRecordsSaHtml };
+  return {
+    username,
+    uid,
+    profileHtml,
+    contributionRecordsHtml,
+    contributionRecordsSaHtml,
+  };
 }

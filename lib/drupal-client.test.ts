@@ -78,6 +78,7 @@ describe("fetchDrupalProfileData", () => {
     const result = await fetchDrupalProfileData("dries");
 
     expect(result).toEqual({
+      username: "dries",
       uid: 1,
       profileHtml: "<html>profile</html>",
       contributionRecordsHtml: "<html>all-records</html>",
@@ -95,6 +96,7 @@ describe("fetchDrupalProfileData", () => {
     const result = await fetchDrupalProfileData("nonexistent-user");
 
     expect(result).toEqual({
+      username: "nonexistent-user",
       uid: null,
       profileHtml: null,
       contributionRecordsHtml: null,
