@@ -45,7 +45,7 @@ fixture profiles.
 **Done when:** hitting the API route with a real username streams
 back a roast in the terminal/Postman, sourced from real scraped data.
 
-## Phase 3 — Frontend integration
+## Phase 3 — Frontend integration — DONE
 
 - Input form: accepts username or full profile URL, normalizes to
   username client- or server-side
@@ -84,3 +84,5 @@ real profile correctly.
 - Caching layer (Vercel KV, TTL per username)
 - Per-maintained-module health data (second scrape hop)
 - Structured/visual "roast card" output
+- Tune system prompt for a funnier/punchier tone (current roasts are
+  accurate but play it fairly straight)
