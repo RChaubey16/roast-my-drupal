@@ -57,7 +57,7 @@ back a roast in the terminal/Postman, sourced from real scraped data.
 **Done when:** a person can type a real drupal.org username into the
 browser and watch a roast stream in, including the not-found path.
 
-## Phase 4 — Rate limiting & hardening
+## Phase 4 — Rate limiting & hardening — DONE
 
 - Per-IP rate limiter on `app/api/roast/route.ts`
 - "Slow down" UI state when rate-limited

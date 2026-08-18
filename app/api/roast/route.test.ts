@@ -9,13 +9,17 @@ vi.mock("ai", () => ({ streamText }));
 vi.mock("@ai-sdk/google", () => ({ google }));
 
 async function importRoute() {
+  // Each test gets a fresh rate-limiter bucket, matching a cold-started
+  // serverless instance rather than leaking request counts across tests.
+  vi.resetModules();
   return import("./route");
 }
 
-function jsonRequest(body: unknown) {
+function jsonRequest(body: unknown, headers: Record<string, string> = {}) {
   return new Request("http://localhost/api/roast", {
     method: "POST",
     body: JSON.stringify(body),
+    headers,
   });
 }
 
@@ -75,5 +79,34 @@ describe("POST /api/roast", () => {
       }),
     );
     expect(response).toBe(mockResponse);
+  });
+
+  it("returns 429 with no scrape or LLM call once a client exceeds the rate limit", async () => {
+    fetchDrupalProfileData.mockResolvedValue({
+      username: "dries",
+      uid: 1,
+      profileHtml: null,
+      contributionRecordsHtml: null,
+      contributionRecordsSaHtml: null,
+    });
+    streamText.mockReturnValue({
+      toTextStreamResponse: () => new Response("mock roast stream"),
+    });
+    const { POST } = await importRoute();
+    const request = () =>
+      jsonRequest({ username: "dries" }, { "x-forwarded-for": "9.9.9.9" });
+
+    for (let i = 0; i < 5; i++) {
+      await POST(request());
+    }
+    fetchDrupalProfileData.mockClear();
+    streamText.mockClear();
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBeTruthy();
+    expect(fetchDrupalProfileData).not.toHaveBeenCalled();
+    expect(streamText).not.toHaveBeenCalled();
   });
 });

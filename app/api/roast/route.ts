@@ -3,8 +3,29 @@ import { google } from "@ai-sdk/google";
 import { fetchDrupalProfileData } from "@/lib/drupal-client";
 import { buildRoastInputFromRawData, buildRoastPrompt } from "@/lib/build-roast-prompt";
 import { normalizeUsername } from "@/lib/normalize-username";
+import { checkRateLimit } from "@/lib/rate-limiter";
+
+function getClientIp(request: Request): string {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) return forwardedFor.split(",")[0].trim();
+  return request.headers.get("x-real-ip") ?? "unknown";
+}
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(ip);
+  if (!rateLimit.allowed) {
+    return Response.json(
+      {
+        error: `You're roasting too fast. Try again in ${rateLimit.retryAfterSeconds}s.`,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+      },
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const rawInput = typeof body?.username === "string" ? body.username : "";
   const username = normalizeUsername(rawInput);

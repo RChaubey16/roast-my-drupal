@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type Status = "idle" | "loading" | "streaming" | "done" | "error";
+type Status = "idle" | "loading" | "streaming" | "done" | "error" | "rate_limited";
 
 export default function Home() {
   const [input, setInput] = useState("");
@@ -34,7 +34,7 @@ export default function Home() {
     if (!response.ok || !response.body) {
       const body = await response.json().catch(() => null);
       setErrorMessage(body?.error ?? "Something went wrong. Please try again.");
-      setStatus("error");
+      setStatus(response.status === 429 ? "rate_limited" : "error");
       return;
     }
 
@@ -101,6 +101,19 @@ export default function Home() {
         {status === "error" && (
           <div className="flex flex-col items-center gap-3">
             <p className="text-red-600 dark:text-red-400">{errorMessage}</p>
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="rounded-full border border-black/[.08] px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-black/[.04] dark:border-white/[.145] dark:text-zinc-50 dark:hover:bg-white/[.06]"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {status === "rate_limited" && (
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-amber-600 dark:text-amber-400">{errorMessage}</p>
             <button
               type="button"
               onClick={handleRetry}
