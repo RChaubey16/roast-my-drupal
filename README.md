@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Roast My Drupal
 
-## Getting Started
+Submit a drupal.org username or profile URL and get roasted by an LLM based
+strictly on your public Drupal activity — bio, badges, projects, and
+contribution stats. No personal details (real name, country, employer) are
+ever used as roast material.
 
-First, run the development server:
+A single Next.js app: one API route does the scrape → parse → prompt →
+stream pipeline server-side, deployed on Vercel.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## How it works
+
+```
+[Browser: username/URL input]
+        │
+        ▼
+[app/api/roast/route.ts]
+   1. Normalize input → username
+   2. Resolve username → uid
+   3. Scrape profile + contribution records from drupal.org
+   4. Parse into a typed "roast input" (Drupal activity only)
+   5. Stream a roast from Gemini
+        │
+        ▼
+[Streamed response back to browser]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Getting started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Requires [pnpm](https://pnpm.io) (`pnpm@10.33.0`).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm install
+cp .env.example .env.local   # add your GOOGLE_GENERATIVE_AI_API_KEY
+pnpm dev
+```
 
-## Learn More
+Open [http://localhost:3000](http://localhost:3000).
 
-To learn more about Next.js, take a look at the following resources:
+## Commands
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Command      | Description                          |
+| ------------ | ------------------------------------- |
+| `pnpm dev`   | Start the dev server                  |
+| `pnpm build` | Production build                      |
+| `pnpm start` | Run the production build              |
+| `pnpm lint`  | ESLint                                |
+| `pnpm test`  | Run the Vitest suite                  |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project structure
 
-## Deploy on Vercel
+- `lib/drupal-client.ts` — resolves a username to a uid and scrapes the profile + contribution-record pages
+- `lib/parse-profile.ts` — parses the raw HTML into typed fields
+- `lib/build-roast-prompt.ts` — narrows parsed data to Drupal-activity-only fields and builds the LLM prompt
+- `lib/normalize-username.ts` — accepts a bare username or a full profile URL
+- `lib/rate-limiter.ts` — per-IP rate limiting for the API route
+- `app/api/roast/route.ts` — the API route: normalize → scrape → build prompt → stream response
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+See `docs/plans/v1.md` for the full design rationale and `docs/plans/v1-phases.md` for build history.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Tech
+
+Next.js (App Router) · TypeScript · Cheerio · Vercel AI SDK (`@ai-sdk/google`, Gemini) · Vitest
