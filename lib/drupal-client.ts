@@ -9,6 +9,23 @@ export interface DrupalProfileData {
   contributionRecordsSaHtml: string | null;
 }
 
+/**
+ * Resolve a drupal.org username to its numeric user id (uid).
+ *
+ * Think of this like looking up someone's employee number from their
+ * name in a company directory: the rest of the system needs the
+ * number, not the name, to fetch further records.
+ *
+ * @param username - The drupal.org username to look up.
+ * @returns The numeric uid, or `null` if the username doesn't resolve
+ * to any user or the lookup request fails.
+ *
+ * @example
+ * ```ts
+ * await resolveUidFromUsername("dries"); // 1
+ * await resolveUidFromUsername("no-such-user"); // null
+ * ```
+ */
 export async function resolveUidFromUsername(
   username: string,
 ): Promise<number | null> {
@@ -26,6 +43,23 @@ export async function resolveUidFromUsername(
   }
 }
 
+/**
+ * Fetch a drupal.org page's raw HTML, treating any failure as absence.
+ *
+ * Think of this like knocking on a door: if nobody answers, or the
+ * door redirects you to a "please log in" sign, you walk away
+ * empty-handed instead of forcing your way in.
+ *
+ * @param url - The absolute URL of the page to fetch.
+ * @returns The page's HTML text, or `null` if the request fails, the
+ * response isn't ok, or the response redirected to the login page
+ * (an access-restricted profile).
+ *
+ * @example
+ * ```ts
+ * await fetchHtmlPage("https://www.drupal.org/u/dries"); // "<html>...</html>"
+ * ```
+ */
 async function fetchHtmlPage(url: string): Promise<string | null> {
   try {
     const response = await fetch(url, {
@@ -41,6 +75,26 @@ async function fetchHtmlPage(url: string): Promise<string | null> {
   }
 }
 
+/**
+ * Scrape a drupal.org user's public footprint: the profile page plus
+ * both contribution-records views (unfiltered and security-advisory-only).
+ *
+ * Think of this like sending three records requests at once, but
+ * only after you know which file cabinet (uid) to pull from — if the
+ * person isn't in the directory at all, you skip the trip entirely.
+ *
+ * @param username - The drupal.org username to scrape.
+ * @returns The raw HTML for each page (`null` per field if that
+ * fetch failed or was access-restricted), plus the resolved `uid`
+ * (`null` if the username didn't resolve to any user, in which case
+ * every HTML field is also `null`).
+ *
+ * @example
+ * ```ts
+ * await fetchDrupalProfileData("dries");
+ * // { username: "dries", uid: 1, profileHtml: "...", contributionRecordsHtml: "...", contributionRecordsSaHtml: "..." }
+ * ```
+ */
 export async function fetchDrupalProfileData(
   username: string,
 ): Promise<DrupalProfileData> {

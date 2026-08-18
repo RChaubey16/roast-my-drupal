@@ -91,3 +91,46 @@ Key constraints from the design doc:
   Model: `gemini-3.6-flash` — confirmed live. `gemini-flash-latest` 503'd
   ("high demand") and `gemini-2.5-flash` 404'd (deprecated; the API's own
   error pointed at `gemini-3.6-flash` as the replacement).
+
+## Code style
+
+Every function in `lib/` (exported or internal) gets a doc comment above
+it, in this format:
+
+```ts
+/**
+ * Calculate the final price after applying a discount.
+ *
+ * Think of this like a store applying a coupon: you start with
+ * the sticker price, take off a percentage, but never let the
+ * price drop below a set floor (minPrice).
+ *
+ * @param price - Original price before discount.
+ * @param discountPercent - Discount to apply, as a percentage (e.g., 20 for 20% off).
+ * @param minPrice - Lowest allowed final price. Defaults to 0.
+ * @returns The discounted price, rounded to 2 decimal places.
+ * @throws {Error} If discountPercent is negative or greater than 100.
+ *
+ * @example
+ * ```ts
+ * calculateDiscount(100, 25); // 75.0
+ * calculateDiscount(10, 90, 5); // 5.0
+ * ```
+ */
+function calculateDiscount(
+  price: number,
+  discountPercent: number,
+  minPrice: number = 0.0
+): number {
+  if (discountPercent < 0 || discountPercent > 100) {
+    throw new Error("discountPercent must be between 0 and 100");
+  }
+
+  const discounted = price * (1 - discountPercent / 100);
+  return Math.round(Math.max(discounted, minPrice) * 100) / 100;
+}
+```
+
+A one-sentence summary, a plain-language analogy, then `@param`/`@returns`/
+`@throws`/`@example` for every parameter and return value. Applies to new
+functions in `lib/` as they're added, not to `app/` or test files.

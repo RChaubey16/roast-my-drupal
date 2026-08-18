@@ -23,6 +23,25 @@ export interface RoastInput {
   mostRecentCreditDate: string | null;
 }
 
+/**
+ * Combine parsed profile fields and contribution stats into the
+ * Drupal-activity-only shape the roast prompt is built from.
+ *
+ * Think of this like assembling a case file from two separate
+ * folders: only the fields relevant to the "case" (Drupal activity)
+ * make it in — personal details like real name or country are left
+ * out of the folder entirely.
+ *
+ * @param profile - Parsed profile page fields.
+ * @param stats - Parsed contribution-record stats.
+ * @returns A `RoastInput` containing only Drupal-activity-scoped data.
+ *
+ * @example
+ * ```ts
+ * toRoastInput(profileFields, stats);
+ * // { username: "dries", totalCredits: 154, ... }
+ * ```
+ */
 export function toRoastInput(
   profile: ProfileFields,
   stats: ContributionStats,
@@ -39,6 +58,24 @@ export function toRoastInput(
   };
 }
 
+/**
+ * Build an all-empty `ProfileFields` for a user whose profile page
+ * couldn't be fetched.
+ *
+ * Think of this like handing back a blank intake form instead of no
+ * form at all: downstream code can keep treating the shape the same
+ * way, just with every field empty.
+ *
+ * @param username - The username to stamp onto the empty fields.
+ * @returns A `ProfileFields` object with every field `null` or empty
+ * except `username` and `displayName`.
+ *
+ * @example
+ * ```ts
+ * emptyProfileFields("dries");
+ * // { username: "dries", displayName: "dries", bio: null, ... }
+ * ```
+ */
 function emptyProfileFields(username: string): ProfileFields {
   return {
     username,
@@ -52,6 +89,26 @@ function emptyProfileFields(username: string): ProfileFields {
   };
 }
 
+/**
+ * Turn raw scraped HTML (or nulls, for failed fetches) into a
+ * complete `RoastInput`, degrading gracefully per missing field.
+ *
+ * Think of this like a claims adjuster working from whatever
+ * paperwork actually arrived: if a document is missing, that section
+ * of the file is filled in with a sensible default instead of
+ * blocking the whole case.
+ *
+ * @param raw - The raw scrape result from `fetchDrupalProfileData`,
+ * where any HTML field may be `null` if that fetch failed.
+ * @returns A complete `RoastInput`, with `0`/`null` defaults for any
+ * data that couldn't be scraped.
+ *
+ * @example
+ * ```ts
+ * buildRoastInputFromRawData(raw);
+ * // { username: "dries", totalCredits: 154, ... }
+ * ```
+ */
 export function buildRoastInputFromRawData(raw: DrupalProfileData): RoastInput {
   const profile = raw.profileHtml
     ? parseProfilePage(raw.profileHtml)
@@ -87,6 +144,24 @@ that exists in your input, so there is nothing to reference. Do not
 speculate about or invent personal details. Stay funny, stay scoped to
 Drupal, and keep the output as plain text.`;
 
+/**
+ * Turn a `RoastInput` into the system + user prompt payload for the
+ * LLM call.
+ *
+ * Think of this like filling out a comedy writer's briefing sheet:
+ * the system prompt sets the ground rules (stay on-topic, stay
+ * funny), and the user prompt lists just the facts to work with.
+ *
+ * @param input - The Drupal-activity-only roast input to describe.
+ * @returns An object with `system` (the fixed system prompt) and
+ * `prompt` (the per-user fact sheet built from `input`).
+ *
+ * @example
+ * ```ts
+ * buildRoastPrompt(input);
+ * // { system: "You are \"Roast My Drupal\"...", prompt: "Roast this Drupal.org profile:\n\n..." }
+ * ```
+ */
 export function buildRoastPrompt(input: RoastInput): {
   system: string;
   prompt: string;
