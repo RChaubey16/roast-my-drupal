@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { decodeRoastStatsHeader, type RoastStats } from "@/lib/roast-stats";
+import { decodeRoastStatsHeader, type RoastStats } from "@/lib/roast/roast-stats";
 import { formatCreditDate } from "@/lib/format-date";
 
 type Status = "idle" | "loading" | "streaming" | "done" | "error" | "rate_limited";

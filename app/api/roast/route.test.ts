@@ -4,7 +4,7 @@ const fetchDrupalProfileData = vi.fn();
 const streamText = vi.fn();
 const google = vi.fn((modelId: string) => ({ modelId }));
 
-vi.mock("@/lib/drupal-client", () => ({ fetchDrupalProfileData }));
+vi.mock("@/lib/drupal/drupal-client", () => ({ fetchDrupalProfileData }));
 vi.mock("ai", () => ({ streamText }));
 vi.mock("@ai-sdk/google", () => ({ google }));
 

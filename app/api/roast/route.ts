@@ -1,10 +1,10 @@
 import { streamText } from "ai";
 import { google } from "@ai-sdk/google";
-import { fetchDrupalProfileData } from "@/lib/drupal-client";
-import { buildRoastInputFromRawData, buildRoastPrompt } from "@/lib/build-roast-prompt";
-import { normalizeUsername } from "@/lib/normalize-username";
+import { fetchDrupalProfileData } from "@/lib/drupal/drupal-client";
+import { buildRoastInputFromRawData, buildRoastPrompt } from "@/lib/roast/build-roast-prompt";
+import { normalizeUsername } from "@/lib/drupal/normalize-username";
 import { checkRateLimit } from "@/lib/rate-limiter";
-import { encodeRoastStatsHeader } from "@/lib/roast-stats";
+import { encodeRoastStatsHeader } from "@/lib/roast/roast-stats";
 
 function getClientIp(request: Request): string {
   const forwardedFor = request.headers.get("x-forwarded-for");

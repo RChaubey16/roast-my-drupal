@@ -1,10 +1,10 @@
-import type { ProfileFields } from "./parse-profile";
+import type { ProfileFields } from "../drupal/parse-profile";
 import {
   parseProfilePage,
   parseContributionRecordsTotal,
   parseMostRecentCreditDate,
-} from "./parse-profile";
-import type { DrupalProfileData } from "./drupal-client";
+} from "../drupal/parse-profile";
+import type { DrupalProfileData } from "../drupal/drupal-client";
 
 export interface ContributionStats {
   totalCredits: number;

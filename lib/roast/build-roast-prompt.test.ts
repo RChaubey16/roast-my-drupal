@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { ProfileFields } from "./parse-profile";
-import type { DrupalProfileData } from "./drupal-client";
+import type { ProfileFields } from "../drupal/parse-profile";
+import type { DrupalProfileData } from "../drupal/drupal-client";
 import {
   toRoastInput,
   buildRoastPrompt,
@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 function fixture(name: string) {
-  return readFileSync(path.join(__dirname, "__fixtures__", name), "utf-8");
+  return readFileSync(path.join(__dirname, "../drupal/__fixtures__", name), "utf-8");
 }
 
 const fullProfile: ProfileFields = {
