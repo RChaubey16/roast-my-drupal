@@ -1,3 +1,5 @@
+import { getCachedProfileData, setCachedProfileData } from "./cache";
+
 const BASE_URL = "https://www.drupal.org";
 const USER_AGENT = "RoastMyDrupal/1.0 (+https://github.com/roast-my-drupal)";
 
@@ -78,10 +80,14 @@ async function fetchHtmlPage(url: string): Promise<string | null> {
 /**
  * Scrape a drupal.org user's public footprint: the profile page plus
  * both contribution-records views (unfiltered and security-advisory-only).
+ * Checks the cache first, so a repeat request for the same username
+ * within the cache TTL skips drupal.org entirely.
  *
  * Think of this like sending three records requests at once, but
  * only after you know which file cabinet (uid) to pull from — if the
  * person isn't in the directory at all, you skip the trip entirely.
+ * And before any of that, you check whether someone already pulled
+ * this exact file recently.
  *
  * @param username - The drupal.org username to scrape.
  * @returns The raw HTML for each page (`null` per field if that
@@ -98,15 +104,20 @@ async function fetchHtmlPage(url: string): Promise<string | null> {
 export async function fetchDrupalProfileData(
   username: string,
 ): Promise<DrupalProfileData> {
+  const cached = await getCachedProfileData(username);
+  if (cached) return cached;
+
   const uid = await resolveUidFromUsername(username);
   if (uid === null) {
-    return {
+    const result: DrupalProfileData = {
       username,
       uid: null,
       profileHtml: null,
       contributionRecordsHtml: null,
       contributionRecordsSaHtml: null,
     };
+    await setCachedProfileData(username, result);
+    return result;
   }
 
   const [profileHtml, contributionRecordsHtml, contributionRecordsSaHtml] =
@@ -118,11 +129,13 @@ export async function fetchDrupalProfileData(
       ),
     ]);
 
-  return {
+  const result: DrupalProfileData = {
     username,
     uid,
     profileHtml,
     contributionRecordsHtml,
     contributionRecordsSaHtml,
   };
+  await setCachedProfileData(username, result);
+  return result;
 }

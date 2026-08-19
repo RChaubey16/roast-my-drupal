@@ -1,8 +1,19 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   resolveUidFromUsername,
   fetchDrupalProfileData,
 } from "./drupal-client";
+import * as cache from "./cache";
+
+vi.mock("./cache", () => ({
+  getCachedProfileData: vi.fn(),
+  setCachedProfileData: vi.fn(),
+}));
+
+beforeEach(() => {
+  vi.mocked(cache.getCachedProfileData).mockResolvedValue(null);
+  vi.mocked(cache.setCachedProfileData).mockResolvedValue(undefined);
+});
 
 function jsonApiResponse(uid: number | null) {
   return {
@@ -22,6 +33,7 @@ function okResponse(body: string, opts: { redirected?: boolean; url?: string } =
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.clearAllMocks();
 });
 
 describe("resolveUidFromUsername", () => {
@@ -159,5 +171,62 @@ describe("fetchDrupalProfileData", () => {
     expect(result.profileHtml).toBe("<html>profile</html>");
     expect(result.contributionRecordsHtml).toBe("<html>all-records</html>");
     expect(result.contributionRecordsSaHtml).toBeNull();
+  });
+
+  it("returns the cached result and skips scraping entirely on a cache hit", async () => {
+    const cachedResult = {
+      username: "dries",
+      uid: 1,
+      profileHtml: "<html>cached-profile</html>",
+      contributionRecordsHtml: "<html>cached-records</html>",
+      contributionRecordsSaHtml: "<html>cached-sa</html>",
+    };
+    vi.mocked(cache.getCachedProfileData).mockResolvedValue(cachedResult);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchDrupalProfileData("dries");
+
+    expect(result).toEqual(cachedResult);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(cache.setCachedProfileData).not.toHaveBeenCalled();
+  });
+
+  it("caches the freshly scraped result on a cache miss", async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes("jsonapi")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(jsonApiResponse(1)),
+        });
+      }
+      if (url.includes("field_is_sa_value=1")) {
+        return Promise.resolve(okResponse("<html>sa-only</html>"));
+      }
+      if (url.includes("contribution-records")) {
+        return Promise.resolve(okResponse("<html>all-records</html>"));
+      }
+      return Promise.resolve(okResponse("<html>profile</html>"));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchDrupalProfileData("dries");
+
+    expect(cache.setCachedProfileData).toHaveBeenCalledWith("dries", result);
+  });
+
+  it("caches an unresolved-username result too, so a repeat lookup for the same bad username also skips the network", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(jsonApiResponse(null)),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchDrupalProfileData("nonexistent-user");
+
+    expect(cache.setCachedProfileData).toHaveBeenCalledWith(
+      "nonexistent-user",
+      result,
+    );
   });
 });
