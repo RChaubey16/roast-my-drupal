@@ -80,18 +80,47 @@ the stats fields alongside the streaming roast text; forcing a
 missing/malformed header still renders the roast text without an
 error.
 
-## Phase 5 — Manual QA & ship
+## Phase 5 — Roast modes (celebrity personas) — DONE
+
+- `lib/roast/roast-modes.ts` — a `ROAST_MODES` map keyed by mode id
+  (`default`, `chandler-bing`, `kevin-hart`, `elon-musk`,
+  `gordon-ramsay`), each holding a persona-flavor system-prompt
+  fragment written as parody/style ("roasted in the comedic *style*
+  of X"), never as a real quote or claim attributed to that person.
+  The Drupal-activity-only scope instruction is shared across all
+  modes, not per-persona, so no mode can be used to smuggle in
+  off-topic or unscoped content
+- `buildRoastPrompt(input, mode)` — accepts a mode id, selects the
+  matching persona fragment; an unknown or missing mode id falls back
+  to `default` silently, not a hard error
+- `app/api/roast/route.ts` — accepts an optional `mode` field on the
+  request body, validated against the known `ROAST_MODES` keys
+- `app/page.tsx` — a mode selector (pills or dropdown) next to the
+  username input, sent along in the POST body; defaults to `default`
+- Verify by manual before/after comparison against the same 2 test
+  profiles used in Phase 1, once per mode; LLM output isn't something
+  to unit-test, but `ROAST_MODES` lookup/fallback behavior is
+
+**Done when:** each mode reads distinctly in that persona's voice
+against the same 2 test profiles, still scoped strictly to Drupal
+activity; omitting `mode` or sending an unknown mode id produces
+output indistinguishable from today's default tone.
+
+## Phase 6 — Manual QA & ship
 
 - End-to-end pass against a handful of real usernames spanning
   activity levels and maintained-project counts (very active, sparse,
   brand-new, multiple maintained projects)
 - Confirm cache hit and miss both work against the deployed KV store
+- Confirm each roast mode still holds scope on a real profile, not
+  just the fixture-backed test profiles
 - Redeploy to Vercel, confirm env vars/secrets (including the new KV
   ones) are set, smoke test the deployed URL
 
 **Done when:** the live v2 app is deployed, roasts a real profile with
-the funnier tone, module health data, and card layout, and a repeat
-request for the same username within the cache TTL doesn't re-scrape.
+the funnier tone, module health data, card layout, and selectable
+roast modes, and a repeat request for the same username within the
+cache TTL doesn't re-scrape.
 
 ## Explicitly deferred (post-v2)
 

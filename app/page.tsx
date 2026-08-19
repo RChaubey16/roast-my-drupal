@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { decodeRoastStatsHeader, type RoastStats } from "@/lib/roast/roast-stats";
+import { ROAST_MODES, type RoastModeId } from "@/lib/roast/roast-modes";
 import { formatCreditDate } from "@/lib/format-date";
 
 type Status = "idle" | "loading" | "streaming" | "done" | "error" | "rate_limited";
@@ -13,6 +14,7 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState("");
   const [lastSubmitted, setLastSubmitted] = useState("");
   const [stats, setStats] = useState<RoastStats | null>(null);
+  const [mode, setMode] = useState<RoastModeId>("default");
 
   const isBusy = status === "loading" || status === "streaming";
 
@@ -27,7 +29,7 @@ export default function Home() {
       response = await fetch("/api/roast", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username, mode }),
       });
     } catch {
       setErrorMessage("Couldn't reach the server. Check your connection and try again.");
@@ -79,6 +81,22 @@ export default function Home() {
         <p className="text-zinc-600 dark:text-zinc-400">
           Enter a drupal.org username or profile URL and get roasted.
         </p>
+        <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+          <label htmlFor="roast-mode">Roast mode</label>
+          <select
+            id="roast-mode"
+            value={mode}
+            onChange={(event) => setMode(event.target.value as RoastModeId)}
+            disabled={isBusy}
+            className="rounded-full border border-black/[.08] bg-white px-3 py-1.5 text-black outline-none disabled:opacity-60 dark:border-white/[.145] dark:bg-black dark:text-zinc-50"
+          >
+            {Object.values(ROAST_MODES).map((roastMode) => (
+              <option key={roastMode.id} value={roastMode.id}>
+                {roastMode.label}
+              </option>
+            ))}
+          </select>
+        </div>
         <form className="flex w-full gap-2" onSubmit={handleSubmit}>
           <input
             type="text"
