@@ -19,7 +19,7 @@ done).
 funnier/punchier than v1's baseline, without slipping outside the
 Drupal-activity-only scope.
 
-## Phase 2 — Caching (Vercel KV)
+## Phase 2 — Caching (Vercel KV) — DONE
 
 - Provision a Vercel KV store and its env vars (`KV_REST_API_URL`,
   `KV_REST_API_TOKEN`) via the Vercel dashboard; add to `.env.local`
