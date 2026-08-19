@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { decodeRoastStatsHeader, type RoastStats } from "@/lib/roast-stats";
+import { formatCreditDate } from "@/lib/format-date";
 
 type Status = "idle" | "loading" | "streaming" | "done" | "error" | "rate_limited";
 
@@ -10,6 +12,7 @@ export default function Home() {
   const [roastText, setRoastText] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [lastSubmitted, setLastSubmitted] = useState("");
+  const [stats, setStats] = useState<RoastStats | null>(null);
 
   const isBusy = status === "loading" || status === "streaming";
 
@@ -17,6 +20,7 @@ export default function Home() {
     setStatus("loading");
     setRoastText("");
     setErrorMessage("");
+    setStats(null);
 
     let response: Response;
     try {
@@ -37,6 +41,8 @@ export default function Home() {
       setStatus(response.status === 429 ? "rate_limited" : "error");
       return;
     }
+
+    setStats(decodeRoastStatsHeader(response.headers.get("X-Roast-Stats")));
 
     setStatus("streaming");
     const reader = response.body.getReader();
@@ -122,6 +128,37 @@ export default function Home() {
               Try again
             </button>
           </div>
+        )}
+
+        {(status === "streaming" || status === "done") && stats && (
+          <dl className="grid w-full grid-cols-2 gap-3 rounded-2xl border border-black/[.08] bg-white p-5 text-left text-sm dark:border-white/[.145] dark:bg-zinc-950">
+            <div>
+              <dt className="text-zinc-500 dark:text-zinc-400">Account age</dt>
+              <dd className="font-medium text-black dark:text-zinc-50">
+                {stats.accountAgeText ?? "unknown"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-zinc-500 dark:text-zinc-400">Membership badge</dt>
+              <dd className="font-medium text-black dark:text-zinc-50">
+                {stats.membershipBadge ?? "none"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-zinc-500 dark:text-zinc-400">Contribution credits</dt>
+              <dd className="font-medium text-black dark:text-zinc-50">
+                {stats.totalCredits} ({stats.securityAdvisoryCredits} security)
+              </dd>
+            </div>
+            <div>
+              <dt className="text-zinc-500 dark:text-zinc-400">Most recent credit</dt>
+              <dd className="font-medium text-black dark:text-zinc-50">
+                {stats.mostRecentCreditDate
+                  ? formatCreditDate(stats.mostRecentCreditDate)
+                  : "never"}
+              </dd>
+            </div>
+          </dl>
         )}
 
         {(status === "streaming" || status === "done") && (

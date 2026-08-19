@@ -60,7 +60,7 @@ against fixtures); a user with zero maintained projects, or one whose
 project-page fetch fails, still produces a roast with that project's
 health data simply omitted — not a hard error.
 
-## Phase 4 — Roast card (frontend)
+## Phase 4 — Roast card (frontend) — DONE
 
 - `app/api/roast/route.ts` — attach the roast input's stats as a
   response header (`X-Roast-Stats`, base64-encoded JSON) alongside the
@@ -69,6 +69,11 @@ health data simply omitted — not a hard error.
   age, contribution credits, membership badge, and module health
   displayed alongside the streamed roast text. A missing or malformed
   header falls back to rendering the roast text alone, no hard error
+
+**Note:** built ahead of Phase 3 (module health), which hasn't landed
+yet — the card currently shows account age, membership badge, and
+contribution credit stats only. Module health can be added to the card
+once Phase 3 lands.
 
 **Done when:** a real username in the browser shows a styled card with
 the stats fields alongside the streaming roast text; forcing a

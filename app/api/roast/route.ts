@@ -4,6 +4,7 @@ import { fetchDrupalProfileData } from "@/lib/drupal-client";
 import { buildRoastInputFromRawData, buildRoastPrompt } from "@/lib/build-roast-prompt";
 import { normalizeUsername } from "@/lib/normalize-username";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { encodeRoastStatsHeader } from "@/lib/roast-stats";
 
 function getClientIp(request: Request): string {
   const forwardedFor = request.headers.get("x-forwarded-for");
@@ -55,5 +56,7 @@ export async function POST(request: Request) {
     prompt,
   });
 
-  return result.toTextStreamResponse();
+  return result.toTextStreamResponse({
+    headers: { "X-Roast-Stats": encodeRoastStatsHeader(roastInput) },
+  });
 }
