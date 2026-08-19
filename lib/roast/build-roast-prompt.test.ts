@@ -78,6 +78,22 @@ describe("buildRoastPrompt", () => {
     expect(system + prompt).not.toContain("Dries Buytaert");
     expect(system + prompt).not.toContain("Belgium");
   });
+
+  it("produces the same system prompt with no mode, 'default', and an unknown mode id", () => {
+    const noMode = buildRoastPrompt(input);
+    const explicitDefault = buildRoastPrompt(input, "default");
+    const unknownMode = buildRoastPrompt(input, "not-a-real-mode");
+
+    expect(explicitDefault.system).toBe(noMode.system);
+    expect(unknownMode.system).toBe(noMode.system);
+  });
+
+  it("blends the persona prompt into the system prompt for a celebrity mode", () => {
+    const { system } = buildRoastPrompt(input, "kevin-hart");
+
+    expect(system).toContain("Kevin Hart");
+    expect(system).toMatch(/drupal/i);
+  });
 });
 
 describe("buildRoastInputFromRawData", () => {

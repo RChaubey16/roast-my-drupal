@@ -5,6 +5,7 @@ import {
   parseMostRecentCreditDate,
 } from "../drupal/parse-profile";
 import type { DrupalProfileData } from "../drupal/drupal-client";
+import { resolveRoastMode } from "./roast-modes";
 
 export interface ContributionStats {
   totalCredits: number;
@@ -146,23 +147,31 @@ Drupal, and keep the output as plain text.`;
 
 /**
  * Turn a `RoastInput` into the system + user prompt payload for the
- * LLM call.
+ * LLM call, optionally blended with a celebrity persona's voice.
  *
  * Think of this like filling out a comedy writer's briefing sheet:
  * the system prompt sets the ground rules (stay on-topic, stay
- * funny), and the user prompt lists just the facts to work with.
+ * funny) and, if a mode was picked, adds a note on which comedian's
+ * voice to write it in — while the user prompt lists just the facts
+ * to work with, unaffected by the mode.
  *
  * @param input - The Drupal-activity-only roast input to describe.
- * @returns An object with `system` (the fixed system prompt) and
- * `prompt` (the per-user fact sheet built from `input`).
+ * @param modeId - The roast mode id to write in (e.g. `"kevin-hart"`).
+ * Defaults to the base tone when omitted or unrecognized.
+ * @returns An object with `system` (the system prompt, with the
+ * persona blended in if one was resolved) and `prompt` (the per-user
+ * fact sheet built from `input`).
  *
  * @example
  * ```ts
- * buildRoastPrompt(input);
- * // { system: "You are \"Roast My Drupal\"...", prompt: "Roast this Drupal.org profile:\n\n..." }
+ * buildRoastPrompt(input, "kevin-hart");
+ * // { system: "You are \"Roast My Drupal\"...\n\nDeliver the roast in the comedic style of Kevin Hart...", prompt: "..." }
  * ```
  */
-export function buildRoastPrompt(input: RoastInput): {
+export function buildRoastPrompt(
+  input: RoastInput,
+  modeId?: string,
+): {
   system: string;
   prompt: string;
 } {
@@ -181,8 +190,10 @@ export function buildRoastPrompt(input: RoastInput): {
     `Most recent credit date: ${input.mostRecentCreditDate ?? "never"}`,
   ];
 
+  const { personaPrompt } = resolveRoastMode(modeId);
+
   return {
-    system: SYSTEM_PROMPT,
+    system: personaPrompt ? `${SYSTEM_PROMPT}\n\n${personaPrompt}` : SYSTEM_PROMPT,
     prompt: `Roast this Drupal.org profile:\n\n${lines.join("\n")}`,
   };
 }
