@@ -1,7 +1,8 @@
+import { memo } from "react";
 import type { RoastStats } from "@/lib/roast/roast-stats";
 import { formatCreditDate } from "@/lib/format-date";
 
-export function StatsCard({ stats }: { stats: RoastStats }) {
+export const StatsCard = memo(function StatsCard({ stats }: { stats: RoastStats }) {
   return (
     <div className="w-full rounded-md border border-white/10 bg-surface p-5 text-left">
       <p className="mb-4 font-mono text-xs uppercase tracking-widest text-flame-orange">
@@ -46,4 +47,4 @@ export function StatsCard({ stats }: { stats: RoastStats }) {
       </dl>
     </div>
   );
-}
+});

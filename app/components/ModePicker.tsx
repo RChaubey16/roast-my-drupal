@@ -1,6 +1,7 @@
+import { memo } from "react";
 import { ROAST_MODES, type RoastModeId } from "@/lib/roast/roast-modes";
 
-export function ModePicker({
+export const ModePicker = memo(function ModePicker({
   value,
   onChange,
   disabled,
@@ -37,4 +38,4 @@ export function ModePicker({
       </div>
     </div>
   );
-}
+});
