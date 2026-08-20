@@ -15,6 +15,7 @@ export interface ProfileFields {
   membershipBadge: string | null;
   currentRoles: CurrentRole[];
   projectsMaintained: string[];
+  maintainedProjectSlugs: string[];
 }
 
 /**
@@ -92,12 +93,19 @@ export function parseProfilePage(html: string): ProfileFields {
     .get()
     .filter((role): role is CurrentRole => role !== null);
 
-  const projectsMaintained = $(
+  const maintainedProjects = $(
     ".view-users-maintained-projects .views-field-title",
   )
-    .map((_, el) => textOrNull($(el)))
+    .map((_, el) => {
+      const name = textOrNull($(el));
+      const slug = $(el).find("a").attr("href")?.replace(/^\/project\//, "");
+      return name && slug ? { name, slug } : null;
+    })
     .get()
-    .filter((name): name is string => name !== null);
+    .filter((project): project is { name: string; slug: string } => project !== null);
+
+  const projectsMaintained = maintainedProjects.map((project) => project.name);
+  const maintainedProjectSlugs = maintainedProjects.map((project) => project.slug);
 
   return {
     username,
@@ -108,6 +116,7 @@ export function parseProfilePage(html: string): ProfileFields {
     membershipBadge,
     currentRoles,
     projectsMaintained,
+    maintainedProjectSlugs,
   };
 }
 

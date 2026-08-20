@@ -10,6 +10,8 @@ import { PipelineLog } from "@/app/components/PipelineLog";
 
 type Status = "idle" | "loading" | "streaming" | "done" | "error" | "rate_limited";
 
+const flameIcon = <FlameDrop className="animate-flicker h-14 w-14" />;
+
 export default function Home() {
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -79,7 +81,7 @@ export default function Home() {
     <div className="flex flex-1 flex-col items-center justify-center px-6 py-16">
       <main className="flex w-full max-w-xl flex-col items-center gap-8 text-center">
         <div className="flex flex-col items-center gap-4">
-          <FlameDrop className="animate-flicker h-14 w-14" />
+          {flameIcon}
           <h1 className="font-display text-4xl uppercase tracking-tight text-foreground sm:text-5xl">
             Roast My Drupal
           </h1>

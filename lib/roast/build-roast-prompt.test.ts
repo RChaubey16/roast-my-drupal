@@ -22,6 +22,7 @@ const fullProfile: ProfileFields = {
   membershipBadge: "Top Tier Drupal Certified Partner",
   currentRoles: [{ jobTitle: "Co-founder, CTO and CSO", organizationName: "Acquia" }],
   projectsMaintained: ["Acquia Connector", "Cloud"],
+  maintainedProjectSlugs: ["acquia_connector", "cloud"],
 };
 
 describe("toRoastInput", () => {
@@ -41,10 +42,27 @@ describe("toRoastInput", () => {
       totalCredits: 154,
       securityAdvisoryCredits: 1,
       mostRecentCreditDate: "2026-07-28T09:55:03+00:00",
+      moduleHealth: [],
     });
     expect(input).not.toHaveProperty("displayName");
     expect(input).not.toHaveProperty("country");
     expect(input).not.toHaveProperty("currentRoles");
+  });
+
+  it("carries through module health data when given", () => {
+    const input = toRoastInput(
+      fullProfile,
+      {
+        totalCredits: 154,
+        securityAdvisoryCredits: 1,
+        mostRecentCreditDate: "2026-07-28T09:55:03+00:00",
+      },
+      [{ name: "Acquia Connector", lastReleaseDate: "9 January 2026", openIssueCount: 5 }],
+    );
+
+    expect(input.moduleHealth).toEqual([
+      { name: "Acquia Connector", lastReleaseDate: "9 January 2026", openIssueCount: 5 },
+    ]);
   });
 });
 
@@ -94,6 +112,30 @@ describe("buildRoastPrompt", () => {
     expect(system).toContain("Kevin Hart");
     expect(system).toMatch(/drupal/i);
   });
+
+  it("embeds module health data into the user prompt when present", () => {
+    const inputWithHealth = toRoastInput(
+      fullProfile,
+      {
+        totalCredits: 154,
+        securityAdvisoryCredits: 1,
+        mostRecentCreditDate: "2026-07-28T09:55:03+00:00",
+      },
+      [{ name: "Acquia Connector", lastReleaseDate: "9 January 2026", openIssueCount: 5 }],
+    );
+
+    const { prompt } = buildRoastPrompt(inputWithHealth);
+
+    expect(prompt).toContain("Acquia Connector");
+    expect(prompt).toContain("9 January 2026");
+    expect(prompt).toContain("5");
+  });
+
+  it("shows 'none' for module health in the user prompt when there is none", () => {
+    const { prompt } = buildRoastPrompt(input);
+
+    expect(prompt).toMatch(/module health.*none/i);
+  });
 });
 
 describe("buildRoastInputFromRawData", () => {
@@ -104,6 +146,7 @@ describe("buildRoastInputFromRawData", () => {
       profileHtml: fixture("dries-profile.html"),
       contributionRecordsHtml: fixture("dries-contribution-records.html"),
       contributionRecordsSaHtml: fixture("dries-contribution-records-sa.html"),
+      moduleHealthPages: [],
     };
 
     const input = buildRoastInputFromRawData(raw);
@@ -122,6 +165,7 @@ describe("buildRoastInputFromRawData", () => {
       profileHtml: null,
       contributionRecordsHtml: fixture("kjartan-contribution-records.html"),
       contributionRecordsSaHtml: fixture("kjartan-contribution-records.html"),
+      moduleHealthPages: [],
     };
 
     const input = buildRoastInputFromRawData(raw);
@@ -132,6 +176,7 @@ describe("buildRoastInputFromRawData", () => {
     expect(input.membershipBadge).toBeNull();
     expect(input.projectsMaintained).toEqual([]);
     expect(input.totalCredits).toBe(0);
+    expect(input.moduleHealth).toEqual([]);
   });
 
   it("defaults contribution stats to zero/null when both contribution-records fetches failed", () => {
@@ -141,6 +186,7 @@ describe("buildRoastInputFromRawData", () => {
       profileHtml: fixture("dries-profile.html"),
       contributionRecordsHtml: null,
       contributionRecordsSaHtml: null,
+      moduleHealthPages: [],
     };
 
     const input = buildRoastInputFromRawData(raw);
@@ -150,5 +196,61 @@ describe("buildRoastInputFromRawData", () => {
     expect(input.totalCredits).toBe(0);
     expect(input.securityAdvisoryCredits).toBe(0);
     expect(input.mostRecentCreditDate).toBeNull();
+  });
+
+  it("includes module health for up to 5 maintained projects, unit-tested against fixtures", () => {
+    const raw: DrupalProfileData = {
+      username: "dries",
+      uid: 1,
+      profileHtml: fixture("dries-profile.html"),
+      contributionRecordsHtml: fixture("dries-contribution-records.html"),
+      contributionRecordsSaHtml: fixture("dries-contribution-records-sa.html"),
+      moduleHealthPages: [
+        { name: "Token", slug: "token", html: fixture("token-project.html") },
+        { name: "Views", slug: "views", html: fixture("views-project.html") },
+      ],
+    };
+
+    const input = buildRoastInputFromRawData(raw);
+
+    expect(input.moduleHealth).toEqual([
+      { name: "Token", lastReleaseDate: "9 January 2026", openIssueCount: 459 },
+      { name: "Views", lastReleaseDate: null, openIssueCount: 1736 },
+    ]);
+  });
+
+  it("omits a project's health data, not a hard error, when that project's page fetch failed", () => {
+    const raw: DrupalProfileData = {
+      username: "dries",
+      uid: 1,
+      profileHtml: fixture("dries-profile.html"),
+      contributionRecordsHtml: fixture("dries-contribution-records.html"),
+      contributionRecordsSaHtml: fixture("dries-contribution-records-sa.html"),
+      moduleHealthPages: [
+        { name: "Token", slug: "token", html: fixture("token-project.html") },
+        { name: "Broken Module", slug: "broken", html: null },
+      ],
+    };
+
+    const input = buildRoastInputFromRawData(raw);
+
+    expect(input.moduleHealth).toEqual([
+      { name: "Token", lastReleaseDate: "9 January 2026", openIssueCount: 459 },
+    ]);
+  });
+
+  it("produces an empty moduleHealth array for a user with zero maintained projects", () => {
+    const raw: DrupalProfileData = {
+      username: "Kjartan",
+      uid: 2,
+      profileHtml: fixture("kjartan-profile.html"),
+      contributionRecordsHtml: fixture("kjartan-contribution-records.html"),
+      contributionRecordsSaHtml: fixture("kjartan-contribution-records.html"),
+      moduleHealthPages: [],
+    };
+
+    const input = buildRoastInputFromRawData(raw);
+
+    expect(input.moduleHealth).toEqual([]);
   });
 });

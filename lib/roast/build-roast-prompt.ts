@@ -4,6 +4,7 @@ import {
   parseContributionRecordsTotal,
   parseMostRecentCreditDate,
 } from "../drupal/parse-profile";
+import { parseModuleHealthPage } from "../drupal/parse-module-health";
 import type { DrupalProfileData } from "../drupal/drupal-client";
 import { resolveRoastMode } from "./roast-modes";
 
@@ -11,6 +12,12 @@ export interface ContributionStats {
   totalCredits: number;
   securityAdvisoryCredits: number;
   mostRecentCreditDate: string | null;
+}
+
+export interface ModuleHealthInput {
+  name: string;
+  lastReleaseDate: string | null;
+  openIssueCount: number;
 }
 
 export interface RoastInput {
@@ -22,6 +29,7 @@ export interface RoastInput {
   totalCredits: number;
   securityAdvisoryCredits: number;
   mostRecentCreditDate: string | null;
+  moduleHealth: ModuleHealthInput[];
 }
 
 /**
@@ -35,6 +43,8 @@ export interface RoastInput {
  *
  * @param profile - Parsed profile page fields.
  * @param stats - Parsed contribution-record stats.
+ * @param moduleHealth - Health data for the profile's maintained
+ * projects. Defaults to an empty array when omitted.
  * @returns A `RoastInput` containing only Drupal-activity-scoped data.
  *
  * @example
@@ -46,6 +56,7 @@ export interface RoastInput {
 export function toRoastInput(
   profile: ProfileFields,
   stats: ContributionStats,
+  moduleHealth: ModuleHealthInput[] = [],
 ): RoastInput {
   return {
     username: profile.username,
@@ -56,6 +67,7 @@ export function toRoastInput(
     totalCredits: stats.totalCredits,
     securityAdvisoryCredits: stats.securityAdvisoryCredits,
     mostRecentCreditDate: stats.mostRecentCreditDate,
+    moduleHealth,
   };
 }
 
@@ -87,6 +99,7 @@ function emptyProfileFields(username: string): ProfileFields {
     membershipBadge: null,
     currentRoles: [],
     projectsMaintained: [],
+    maintainedProjectSlugs: [],
   };
 }
 
@@ -125,11 +138,22 @@ export function buildRoastInputFromRawData(raw: DrupalProfileData): RoastInput {
     ? parseMostRecentCreditDate(raw.contributionRecordsHtml)
     : null;
 
-  return toRoastInput(profile, {
-    totalCredits,
-    securityAdvisoryCredits,
-    mostRecentCreditDate,
-  });
+  const moduleHealth: ModuleHealthInput[] = raw.moduleHealthPages
+    .filter((page) => page.html !== null)
+    .map((page) => ({
+      name: page.name,
+      ...parseModuleHealthPage(page.html!),
+    }));
+
+  return toRoastInput(
+    profile,
+    {
+      totalCredits,
+      securityAdvisoryCredits,
+      mostRecentCreditDate,
+    },
+    moduleHealth,
+  );
 }
 
 const SYSTEM_PROMPT = `You are "Roast My Drupal," a comedy roast generator scoped
@@ -188,6 +212,16 @@ export function buildRoastPrompt(
     `Total contribution credits: ${input.totalCredits}`,
     `Security advisory credits: ${input.securityAdvisoryCredits}`,
     `Most recent credit date: ${input.mostRecentCreditDate ?? "never"}`,
+    `Module health: ${
+      input.moduleHealth.length > 0
+        ? input.moduleHealth
+            .map(
+              (m) =>
+                `${m.name} (last release: ${m.lastReleaseDate ?? "unknown"}, open issues: ${m.openIssueCount})`,
+            )
+            .join("; ")
+        : "none"
+    }`,
   ];
 
   const { personaPrompt } = resolveRoastMode(modeId);

@@ -5,21 +5,7 @@ and testable before moving to the next — no phase depends on unbuilt
 future work. Builds on the shipped v1 app (`v1-phases.md`, all phases
 done).
 
-## Phase 1 — Funnier tone
-
-- Rewrite `SYSTEM_PROMPT` in `lib/build-roast-prompt.ts`: sharper
-  comedic direction, punchier phrasing, a couple of few-shot example
-  jokes — still enforcing the Drupal-activity-only scope
-- No new fields, no new fetches — pure prompt-engineering change
-- Verify by manual before/after comparison against a couple of real
-  profiles (a prolific one, a sparse one); LLM output isn't something
-  to unit-test
-
-**Done when:** roasts against the same 2 real profiles read noticeably
-funnier/punchier than v1's baseline, without slipping outside the
-Drupal-activity-only scope.
-
-## Phase 2 — Caching (Vercel KV) — DONE
+## Phase 1 — Caching (Vercel KV) — DONE
 
 - Provision a Vercel KV store and its env vars (`KV_REST_API_URL`,
   `KV_REST_API_TOKEN`) via the Vercel dashboard; add to `.env.local`
@@ -40,7 +26,7 @@ triggers only one live scrape (verified via a fetch spy/mock), with the
 second call served from cache; simulating a KV outage still completes
 the request via a live scrape.
 
-## Phase 3 — Per-maintained-module health data
+## Phase 2 — Per-maintained-module health data — DONE
 
 - Research step: confirm `/project/{name}` page structure and its
   robots.txt allowance; save fixture HTML for a maintainer with
@@ -60,7 +46,7 @@ against fixtures); a user with zero maintained projects, or one whose
 project-page fetch fails, still produces a roast with that project's
 health data simply omitted — not a hard error.
 
-## Phase 4 — Roast card (frontend) — DONE
+## Phase 3 — Roast card (frontend) — DONE
 
 - `app/api/roast/route.ts` — attach the roast input's stats as a
   response header (`X-Roast-Stats`, base64-encoded JSON) alongside the
@@ -70,17 +56,19 @@ health data simply omitted — not a hard error.
   displayed alongside the streamed roast text. A missing or malformed
   header falls back to rendering the roast text alone, no hard error
 
-**Note:** built ahead of Phase 3 (module health), which hasn't landed
-yet — the card currently shows account age, membership badge, and
-contribution credit stats only. Module health can be added to the card
-once Phase 3 lands.
+**Note:** built ahead of Phase 2 (module health). Phase 2 has since
+landed in `RoastInput`/the roast prompt, but the card itself
+(`RoastStats`/`X-Roast-Stats` in `lib/roast/roast-stats.ts`,
+`app/page.tsx`) still only surfaces account age, membership badge, and
+contribution credit stats — wiring module health into the card display
+is still open, tracked here rather than as its own phase.
 
 **Done when:** a real username in the browser shows a styled card with
 the stats fields alongside the streaming roast text; forcing a
 missing/malformed header still renders the roast text without an
 error.
 
-## Phase 5 — Roast modes (celebrity personas) — DONE
+## Phase 4 — Roast modes (celebrity personas) — DONE
 
 - `lib/roast/roast-modes.ts` — a `ROAST_MODES` map keyed by mode id
   (`default`, `chandler-bing`, `kevin-hart`, `elon-musk`,
@@ -97,16 +85,17 @@ error.
   request body, validated against the known `ROAST_MODES` keys
 - `app/page.tsx` — a mode selector (pills or dropdown) next to the
   username input, sent along in the POST body; defaults to `default`
-- Verify by manual before/after comparison against the same 2 test
-  profiles used in Phase 1, once per mode; LLM output isn't something
-  to unit-test, but `ROAST_MODES` lookup/fallback behavior is
+- Verify by manual before/after comparison against a couple of real
+  profiles (a prolific one, a sparse one), once per mode; LLM output
+  isn't something to unit-test, but `ROAST_MODES` lookup/fallback
+  behavior is
 
 **Done when:** each mode reads distinctly in that persona's voice
 against the same 2 test profiles, still scoped strictly to Drupal
 activity; omitting `mode` or sending an unknown mode id produces
 output indistinguishable from today's default tone.
 
-## Phase 6 — Manual QA & ship
+## Phase 5 — Manual QA & ship
 
 - End-to-end pass against a handful of real usernames spanning
   activity levels and maintained-project counts (very active, sparse,
@@ -118,9 +107,9 @@ output indistinguishable from today's default tone.
   ones) are set, smoke test the deployed URL
 
 **Done when:** the live v2 app is deployed, roasts a real profile with
-the funnier tone, module health data, card layout, and selectable
-roast modes, and a repeat request for the same username within the
-cache TTL doesn't re-scrape.
+module health data, card layout, and selectable roast modes, and a
+repeat request for the same username within the cache TTL doesn't
+re-scrape.
 
 ## Explicitly deferred (post-v2)
 

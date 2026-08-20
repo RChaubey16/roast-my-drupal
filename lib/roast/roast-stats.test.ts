@@ -11,6 +11,7 @@ const fullInput: RoastInput = {
   totalCredits: 154,
   securityAdvisoryCredits: 3,
   mostRecentCreditDate: "2026-06-01",
+  moduleHealth: [],
 };
 
 describe("encodeRoastStatsHeader / decodeRoastStatsHeader", () => {

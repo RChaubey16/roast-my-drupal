@@ -62,6 +62,7 @@ describe("POST /api/roast", () => {
       profileHtml: null,
       contributionRecordsHtml: null,
       contributionRecordsSaHtml: null,
+      moduleHealthPages: [],
     });
     const { POST } = await importRoute();
 
@@ -78,6 +79,7 @@ describe("POST /api/roast", () => {
       profileHtml: null,
       contributionRecordsHtml: null,
       contributionRecordsSaHtml: null,
+      moduleHealthPages: [],
     });
     mockFullStream([textDelta("mock roast stream")]);
     const { POST } = await importRoute();
@@ -103,6 +105,7 @@ describe("POST /api/roast", () => {
       profileHtml: null,
       contributionRecordsHtml: null,
       contributionRecordsSaHtml: null,
+      moduleHealthPages: [],
     });
     mockFullStream([textDelta("mock roast stream")]);
     const { POST } = await importRoute();
@@ -123,6 +126,7 @@ describe("POST /api/roast", () => {
       profileHtml: null,
       contributionRecordsHtml: null,
       contributionRecordsSaHtml: null,
+      moduleHealthPages: [],
     });
     mockFullStream([textDelta("mock roast stream")]);
     const { POST } = await importRoute();
@@ -146,6 +150,7 @@ describe("POST /api/roast", () => {
       profileHtml: null,
       contributionRecordsHtml: null,
       contributionRecordsSaHtml: null,
+      moduleHealthPages: [],
     });
     const quotaError = new APICallError({
       message: "Resource has been exhausted",
@@ -170,6 +175,7 @@ describe("POST /api/roast", () => {
       profileHtml: null,
       contributionRecordsHtml: null,
       contributionRecordsSaHtml: null,
+      moduleHealthPages: [],
     });
     mockFullStream([
       { type: "start" },
@@ -193,6 +199,7 @@ describe("POST /api/roast", () => {
       profileHtml: null,
       contributionRecordsHtml: null,
       contributionRecordsSaHtml: null,
+      moduleHealthPages: [],
     });
     mockFullStream([textDelta("mock roast stream")]);
     const { POST } = await importRoute();
