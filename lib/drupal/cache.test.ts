@@ -17,6 +17,7 @@ const sampleData: DrupalProfileData = {
   profileHtml: "<html>profile</html>",
   contributionRecordsHtml: "<html>all-records</html>",
   contributionRecordsSaHtml: "<html>sa-only</html>",
+  moduleHealthPages: [],
 };
 
 afterEach(() => {
