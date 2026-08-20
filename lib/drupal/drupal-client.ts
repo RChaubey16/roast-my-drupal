@@ -1,5 +1,15 @@
+import { getCachedProfileData, setCachedProfileData } from "./cache";
+import { parseProfilePage } from "./parse-profile";
+
 const BASE_URL = "https://www.drupal.org";
 const USER_AGENT = "RoastMyDrupal/1.0 (+https://github.com/roast-my-drupal)";
+const MAX_MODULE_HEALTH_FETCHES = 5;
+
+export interface ModuleHealthPage {
+  name: string;
+  slug: string;
+  html: string | null;
+}
 
 export interface DrupalProfileData {
   username: string;
@@ -7,6 +17,7 @@ export interface DrupalProfileData {
   profileHtml: string | null;
   contributionRecordsHtml: string | null;
   contributionRecordsSaHtml: string | null;
+  moduleHealthPages: ModuleHealthPage[];
 }
 
 /**
@@ -76,37 +87,50 @@ async function fetchHtmlPage(url: string): Promise<string | null> {
 }
 
 /**
- * Scrape a drupal.org user's public footprint: the profile page plus
- * both contribution-records views (unfiltered and security-advisory-only).
+ * Scrape a drupal.org user's public footprint: the profile page, both
+ * contribution-records views (unfiltered and security-advisory-only),
+ * and up to 5 of the user's maintained-project pages (for module
+ * health). Checks the cache first, so a repeat request for the same
+ * username within the cache TTL skips drupal.org entirely.
  *
  * Think of this like sending three records requests at once, but
  * only after you know which file cabinet (uid) to pull from — if the
  * person isn't in the directory at all, you skip the trip entirely.
+ * Which project files to also request only becomes known once the
+ * profile file itself comes back, so those requests go out in a
+ * second wave. And before any of that, you check whether someone
+ * already pulled this exact file recently.
  *
  * @param username - The drupal.org username to scrape.
  * @returns The raw HTML for each page (`null` per field if that
  * fetch failed or was access-restricted), plus the resolved `uid`
  * (`null` if the username didn't resolve to any user, in which case
- * every HTML field is also `null`).
+ * every HTML field is also `null` and `moduleHealthPages` is empty).
  *
  * @example
  * ```ts
  * await fetchDrupalProfileData("dries");
- * // { username: "dries", uid: 1, profileHtml: "...", contributionRecordsHtml: "...", contributionRecordsSaHtml: "..." }
+ * // { username: "dries", uid: 1, profileHtml: "...", contributionRecordsHtml: "...", contributionRecordsSaHtml: "...", moduleHealthPages: [...] }
  * ```
  */
 export async function fetchDrupalProfileData(
   username: string,
 ): Promise<DrupalProfileData> {
+  const cached = await getCachedProfileData(username);
+  if (cached) return cached;
+
   const uid = await resolveUidFromUsername(username);
   if (uid === null) {
-    return {
+    const result: DrupalProfileData = {
       username,
       uid: null,
       profileHtml: null,
       contributionRecordsHtml: null,
       contributionRecordsSaHtml: null,
+      moduleHealthPages: [],
     };
+    await setCachedProfileData(username, result);
+    return result;
   }
 
   const [profileHtml, contributionRecordsHtml, contributionRecordsSaHtml] =
@@ -118,11 +142,38 @@ export async function fetchDrupalProfileData(
       ),
     ]);
 
-  return {
+  // Which project slugs to fetch depends on parsing the profile page we
+  // just fetched, so this second wave can't join the Promise.all above.
+  const profile = profileHtml ? parseProfilePage(profileHtml) : null;
+  const maintainedProjects = profile
+    ? profile.projectsMaintained.map((name, i) => ({
+        name,
+        slug: profile.maintainedProjectSlugs[i],
+      }))
+    : [];
+  const projectsToFetch = maintainedProjects.slice(0, MAX_MODULE_HEALTH_FETCHES);
+
+  const moduleHealthHtml = await Promise.all(
+    projectsToFetch.map((project) =>
+      fetchHtmlPage(`${BASE_URL}/project/${project.slug}`),
+    ),
+  );
+  const moduleHealthPages: ModuleHealthPage[] = projectsToFetch.map(
+    (project, i) => ({
+      name: project.name,
+      slug: project.slug,
+      html: moduleHealthHtml[i],
+    }),
+  );
+
+  const result: DrupalProfileData = {
     username,
     uid,
     profileHtml,
     contributionRecordsHtml,
     contributionRecordsSaHtml,
+    moduleHealthPages,
   };
+  await setCachedProfileData(username, result);
+  return result;
 }

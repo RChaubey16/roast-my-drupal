@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.44",
+    "@vercel/kv": "^3.0.0",
     "ai": "^7.0.66",
     "cheerio": "^1.2.0",
     "lru-cache": "^11.5.2",

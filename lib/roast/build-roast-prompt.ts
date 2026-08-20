@@ -1,15 +1,23 @@
-import type { ProfileFields } from "./parse-profile";
+import type { ProfileFields } from "../drupal/parse-profile";
 import {
   parseProfilePage,
   parseContributionRecordsTotal,
   parseMostRecentCreditDate,
-} from "./parse-profile";
-import type { DrupalProfileData } from "./drupal-client";
+} from "../drupal/parse-profile";
+import { parseModuleHealthPage } from "../drupal/parse-module-health";
+import type { DrupalProfileData } from "../drupal/drupal-client";
+import { resolveRoastMode } from "./roast-modes";
 
 export interface ContributionStats {
   totalCredits: number;
   securityAdvisoryCredits: number;
   mostRecentCreditDate: string | null;
+}
+
+export interface ModuleHealthInput {
+  name: string;
+  lastReleaseDate: string | null;
+  openIssueCount: number;
 }
 
 export interface RoastInput {
@@ -21,6 +29,7 @@ export interface RoastInput {
   totalCredits: number;
   securityAdvisoryCredits: number;
   mostRecentCreditDate: string | null;
+  moduleHealth: ModuleHealthInput[];
 }
 
 /**
@@ -34,6 +43,8 @@ export interface RoastInput {
  *
  * @param profile - Parsed profile page fields.
  * @param stats - Parsed contribution-record stats.
+ * @param moduleHealth - Health data for the profile's maintained
+ * projects. Defaults to an empty array when omitted.
  * @returns A `RoastInput` containing only Drupal-activity-scoped data.
  *
  * @example
@@ -45,6 +56,7 @@ export interface RoastInput {
 export function toRoastInput(
   profile: ProfileFields,
   stats: ContributionStats,
+  moduleHealth: ModuleHealthInput[] = [],
 ): RoastInput {
   return {
     username: profile.username,
@@ -55,6 +67,7 @@ export function toRoastInput(
     totalCredits: stats.totalCredits,
     securityAdvisoryCredits: stats.securityAdvisoryCredits,
     mostRecentCreditDate: stats.mostRecentCreditDate,
+    moduleHealth,
   };
 }
 
@@ -86,6 +99,7 @@ function emptyProfileFields(username: string): ProfileFields {
     membershipBadge: null,
     currentRoles: [],
     projectsMaintained: [],
+    maintainedProjectSlugs: [],
   };
 }
 
@@ -124,11 +138,22 @@ export function buildRoastInputFromRawData(raw: DrupalProfileData): RoastInput {
     ? parseMostRecentCreditDate(raw.contributionRecordsHtml)
     : null;
 
-  return toRoastInput(profile, {
-    totalCredits,
-    securityAdvisoryCredits,
-    mostRecentCreditDate,
-  });
+  const moduleHealth: ModuleHealthInput[] = raw.moduleHealthPages
+    .filter((page) => page.html !== null)
+    .map((page) => ({
+      name: page.name,
+      ...parseModuleHealthPage(page.html!),
+    }));
+
+  return toRoastInput(
+    profile,
+    {
+      totalCredits,
+      securityAdvisoryCredits,
+      mostRecentCreditDate,
+    },
+    moduleHealth,
+  );
 }
 
 const SYSTEM_PROMPT = `You are "Roast My Drupal," a comedy roast generator scoped
@@ -146,23 +171,31 @@ Drupal, and keep the output as plain text.`;
 
 /**
  * Turn a `RoastInput` into the system + user prompt payload for the
- * LLM call.
+ * LLM call, optionally blended with a celebrity persona's voice.
  *
  * Think of this like filling out a comedy writer's briefing sheet:
  * the system prompt sets the ground rules (stay on-topic, stay
- * funny), and the user prompt lists just the facts to work with.
+ * funny) and, if a mode was picked, adds a note on which comedian's
+ * voice to write it in — while the user prompt lists just the facts
+ * to work with, unaffected by the mode.
  *
  * @param input - The Drupal-activity-only roast input to describe.
- * @returns An object with `system` (the fixed system prompt) and
- * `prompt` (the per-user fact sheet built from `input`).
+ * @param modeId - The roast mode id to write in (e.g. `"kevin-hart"`).
+ * Defaults to the base tone when omitted or unrecognized.
+ * @returns An object with `system` (the system prompt, with the
+ * persona blended in if one was resolved) and `prompt` (the per-user
+ * fact sheet built from `input`).
  *
  * @example
  * ```ts
- * buildRoastPrompt(input);
- * // { system: "You are \"Roast My Drupal\"...", prompt: "Roast this Drupal.org profile:\n\n..." }
+ * buildRoastPrompt(input, "kevin-hart");
+ * // { system: "You are \"Roast My Drupal\"...\n\nDeliver the roast in the comedic style of Kevin Hart...", prompt: "..." }
  * ```
  */
-export function buildRoastPrompt(input: RoastInput): {
+export function buildRoastPrompt(
+  input: RoastInput,
+  modeId?: string,
+): {
   system: string;
   prompt: string;
 } {
@@ -179,10 +212,22 @@ export function buildRoastPrompt(input: RoastInput): {
     `Total contribution credits: ${input.totalCredits}`,
     `Security advisory credits: ${input.securityAdvisoryCredits}`,
     `Most recent credit date: ${input.mostRecentCreditDate ?? "never"}`,
+    `Module health: ${
+      input.moduleHealth.length > 0
+        ? input.moduleHealth
+            .map(
+              (m) =>
+                `${m.name} (last release: ${m.lastReleaseDate ?? "unknown"}, open issues: ${m.openIssueCount})`,
+            )
+            .join("; ")
+        : "none"
+    }`,
   ];
 
+  const { personaPrompt } = resolveRoastMode(modeId);
+
   return {
-    system: SYSTEM_PROMPT,
+    system: personaPrompt ? `${SYSTEM_PROMPT}\n\n${personaPrompt}` : SYSTEM_PROMPT,
     prompt: `Roast this Drupal.org profile:\n\n${lines.join("\n")}`,
   };
 }

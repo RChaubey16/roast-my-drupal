@@ -32,6 +32,10 @@ describe("parseProfilePage", () => {
     });
     expect(profile.projectsMaintained).toContain("Acquia Connector");
     expect(profile.projectsMaintained.length).toBeGreaterThan(0);
+    expect(profile.maintainedProjectSlugs).toContain("acquia_connector");
+    expect(profile.maintainedProjectSlugs.length).toBe(
+      profile.projectsMaintained.length,
+    );
   });
 
   it("parses a sparse profile with no bio or maintained projects", () => {
@@ -43,6 +47,7 @@ describe("parseProfilePage", () => {
     expect(profile.displayName).toBe("Kjartan Mannes");
     expect(profile.bio).toBeNull();
     expect(profile.projectsMaintained).toEqual([]);
+    expect(profile.maintainedProjectSlugs).toEqual([]);
   });
 });
 
