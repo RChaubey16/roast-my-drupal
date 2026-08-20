@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { decodeRoastStatsHeader, type RoastStats } from "@/lib/roast/roast-stats";
-import { ROAST_MODES, type RoastModeId } from "@/lib/roast/roast-modes";
-import { formatCreditDate } from "@/lib/format-date";
+import { type RoastModeId } from "@/lib/roast/roast-modes";
+import { FlameDrop } from "@/app/components/FlameDrop";
+import { ModePicker } from "@/app/components/ModePicker";
+import { StatsCard } from "@/app/components/StatsCard";
+import { PipelineLog } from "@/app/components/PipelineLog";
 
 type Status = "idle" | "loading" | "streaming" | "done" | "error" | "rate_limited";
 
@@ -73,62 +76,57 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center bg-zinc-50 px-6 py-12 font-sans dark:bg-black">
-      <main className="flex w-full max-w-lg flex-col items-center gap-6 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-black dark:text-zinc-50">
-          Roast My Drupal
-        </h1>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          Enter a drupal.org username or profile URL and get roasted.
-        </p>
-        <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-          <label htmlFor="roast-mode">Roast mode</label>
-          <select
-            id="roast-mode"
-            value={mode}
-            onChange={(event) => setMode(event.target.value as RoastModeId)}
-            disabled={isBusy}
-            className="rounded-full border border-black/[.08] bg-white px-3 py-1.5 text-black outline-none disabled:opacity-60 dark:border-white/[.145] dark:bg-black dark:text-zinc-50"
-          >
-            {Object.values(ROAST_MODES).map((roastMode) => (
-              <option key={roastMode.id} value={roastMode.id}>
-                {roastMode.label}
-              </option>
-            ))}
-          </select>
+    <div className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+      <main className="flex w-full max-w-xl flex-col items-center gap-8 text-center">
+        <div className="flex flex-col items-center gap-4">
+          <FlameDrop className="animate-flicker h-14 w-14" />
+          <h1 className="font-display text-4xl uppercase tracking-tight text-foreground sm:text-5xl">
+            Roast My Drupal
+          </h1>
+          <p className="max-w-sm text-sm text-muted">
+            We read your drupal.org contribution history and turn it against you.
+          </p>
         </div>
-        <form className="flex w-full gap-2" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            name="username"
-            placeholder="e.g. dries"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            disabled={isBusy}
-            className="flex-1 rounded-full border border-black/[.08] bg-white px-5 py-3 text-black outline-none disabled:opacity-60 dark:border-white/[.145] dark:bg-black dark:text-zinc-50"
-          />
+
+        <ModePicker value={mode} onChange={setMode} disabled={isBusy} />
+
+        <form className="flex w-full flex-col gap-3 sm:flex-row" onSubmit={handleSubmit}>
+          <div className="flex flex-1 items-center rounded-md border border-white/15 bg-surface px-2">
+            <span className="hidden shrink-0 pl-2 font-mono text-sm text-muted sm:inline">
+              roast@drupal.org:~$
+            </span>
+            <span className="shrink-0 pl-2 font-mono text-sm text-muted sm:hidden">$</span>
+            <input
+              type="text"
+              name="username"
+              placeholder="dries"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              disabled={isBusy}
+              className="flex-1 bg-transparent px-3 py-3 font-mono text-sm text-foreground outline-none disabled:opacity-60"
+            />
+          </div>
           <button
             type="submit"
             disabled={isBusy}
-            className="rounded-full bg-foreground px-5 py-3 font-medium text-background transition-colors hover:bg-[#383838] disabled:opacity-60 dark:hover:bg-[#ccc]"
+            className="rounded-md bg-gradient-to-r from-flame-orange to-flame-red px-6 py-3 font-mono text-sm font-medium uppercase tracking-wide text-background transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             {isBusy ? "Roasting…" : "Roast"}
           </button>
         </form>
 
-        {status === "loading" && (
-          <p className="text-zinc-600 dark:text-zinc-400">
-            Digging through their Drupal footprint…
-          </p>
-        )}
+        {status === "loading" && <PipelineLog key={lastSubmitted} username={lastSubmitted} />}
 
         {status === "error" && (
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-red-600 dark:text-red-400">{errorMessage}</p>
+          <div className="flex w-full flex-col items-center gap-3 rounded-md border border-red-500/30 bg-surface p-4 text-left">
+            <div className="w-full">
+              <p className="font-mono text-xs uppercase tracking-widest text-red-400">error</p>
+              <p className="mt-1 text-sm text-foreground">{errorMessage}</p>
+            </div>
             <button
               type="button"
               onClick={handleRetry}
-              className="rounded-full border border-black/[.08] px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-black/[.04] dark:border-white/[.145] dark:text-zinc-50 dark:hover:bg-white/[.06]"
+              className="rounded-md border border-white/15 px-4 py-2 font-mono text-xs uppercase tracking-wide text-foreground transition-colors hover:border-white/30"
             >
               Try again
             </button>
@@ -136,53 +134,37 @@ export default function Home() {
         )}
 
         {status === "rate_limited" && (
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-amber-600 dark:text-amber-400">{errorMessage}</p>
+          <div className="flex w-full flex-col items-center gap-3 rounded-md border border-amber-500/30 bg-surface p-4 text-left">
+            <div className="w-full">
+              <p className="font-mono text-xs uppercase tracking-widest text-amber-400">
+                cooldown
+              </p>
+              <p className="mt-1 text-sm text-foreground">{errorMessage}</p>
+            </div>
             <button
               type="button"
               onClick={handleRetry}
-              className="rounded-full border border-black/[.08] px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-black/[.04] dark:border-white/[.145] dark:text-zinc-50 dark:hover:bg-white/[.06]"
+              className="rounded-md border border-white/15 px-4 py-2 font-mono text-xs uppercase tracking-wide text-foreground transition-colors hover:border-white/30"
             >
               Try again
             </button>
           </div>
         )}
 
-        {(status === "streaming" || status === "done") && stats && (
-          <dl className="grid w-full grid-cols-2 gap-3 rounded-2xl border border-black/[.08] bg-white p-5 text-left text-sm dark:border-white/[.145] dark:bg-zinc-950">
-            <div>
-              <dt className="text-zinc-500 dark:text-zinc-400">Account age</dt>
-              <dd className="font-medium text-black dark:text-zinc-50">
-                {stats.accountAgeText ?? "unknown"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-zinc-500 dark:text-zinc-400">Membership badge</dt>
-              <dd className="font-medium text-black dark:text-zinc-50">
-                {stats.membershipBadge ?? "none"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-zinc-500 dark:text-zinc-400">Contribution credits</dt>
-              <dd className="font-medium text-black dark:text-zinc-50">
-                {stats.totalCredits} ({stats.securityAdvisoryCredits} security)
-              </dd>
-            </div>
-            <div>
-              <dt className="text-zinc-500 dark:text-zinc-400">Most recent credit</dt>
-              <dd className="font-medium text-black dark:text-zinc-50">
-                {stats.mostRecentCreditDate
-                  ? formatCreditDate(stats.mostRecentCreditDate)
-                  : "never"}
-              </dd>
-            </div>
-          </dl>
-        )}
+        {(status === "streaming" || status === "done") && stats && <StatsCard stats={stats} />}
 
         {(status === "streaming" || status === "done") && (
-          <p className="w-full whitespace-pre-wrap text-left text-black dark:text-zinc-50">
-            {roastText}
-          </p>
+          <div className="flex w-full items-start gap-4 text-left">
+            <div className="mt-1 h-full w-1 shrink-0 self-stretch rounded-full bg-gradient-to-b from-flame-orange to-flame-red" />
+            <p className="whitespace-pre-wrap text-foreground">
+              {roastText}
+              {status === "streaming" && (
+                <span className="animate-blink ml-1 inline-block w-2 bg-flame-orange align-middle">
+                  &nbsp;
+                </span>
+              )}
+            </p>
+          </div>
         )}
       </main>
     </div>
